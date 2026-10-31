@@ -60,9 +60,13 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
 
   return (
     <div ref={wrapRef} className="canvas-wrap" role="img"
-      aria-label="Photo with outlined parts. Use the list to edit parts with a keyboard.">
+      aria-busy={!image && !failed}
+      aria-label={image || failed ? 'Photo with outlined parts. Use the list to edit parts with a keyboard.' : 'Loading your photo'}>
+      {!image && !failed && (
+        <div className="skeleton" style={{ aspectRatio: `${width} / ${height}` }}>Loading your photo…</div>
+      )}
       {failed && <p className="notice error">Couldn't load the photo.</p>}
-      {scale > 0 && (
+      {scale > 0 && image && (
         <Stage
           width={boxWidth}
           height={height * scale}

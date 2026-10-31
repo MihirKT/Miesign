@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import RegionCanvas from '../components/RegionCanvas'
 import { api, errorMessage } from '../lib/api'
-import { num, typeLabel } from '../lib/format'
+import { typeLabel } from '../lib/format'
 import { useElapsed } from '../lib/hooks'
 import { newPartQuad } from '../lib/quad'
 import { COMPONENT_TYPES, type ComponentType, type Part, type Project } from '../lib/types'
@@ -26,6 +26,15 @@ export default function PartsStep({ project, onChange, onNext }: Props) {
   const [scaleFt, setScaleFt] = useState('')
   const elapsed = useElapsed(busy === 'detect')
 
+  const autoRan = useRef(false)
+  useEffect(() => {
+    if (autoRan.current) return
+    autoRan.current = true
+    if (photo && project.components.length === 0) void detect()
+    // Runs once on mount; later deletions must not retrigger detection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   if (!photo) {
     return <p className="notice error" role="alert">Choose a usable photo on step 01 first.</p>
   }
@@ -48,6 +57,11 @@ export default function PartsStep({ project, onChange, onNext }: Props) {
     } finally {
       setBusy(null)
     }
+  }
+
+  function detect() {
+    return run('detect', () => api.detect(project.id),
+      (p) => (p.components.length ? `Found ${p.components.length} parts.` : 'No parts found. Add them yourself.'))
   }
 
   const edit = (i: number, patch: Partial<Part>) => {
@@ -99,8 +113,7 @@ export default function PartsStep({ project, onChange, onNext }: Props) {
             <button type="button" className="btn btn-primary" disabled={busy !== null} aria-busy={busy === 'detect'}
               onClick={() => {
                 if (dirty && !window.confirm('Finding parts again replaces your unsaved changes. Continue?')) return
-                void run('detect', () => api.detect(project.id),
-                  (p) => (p.components.length ? `Found ${p.components.length} parts.` : 'No parts found. Add them yourself.'))
+                void detect()
               }}>
               {parts.length ? 'Find parts again' : 'Find parts'}
             </button>
@@ -129,11 +142,10 @@ export default function PartsStep({ project, onChange, onNext }: Props) {
             {busy === 'save' ? 'Saving…' : 'Save parts'}
           </button>
 
-          <h2>Real size</h2>
+          <h2>Make measurements more accurate (optional)</h2>
           <p className="lede">
-            {project.scaleSource === 'user'
-              ? `Using your measurement (${num(project.pxPerFt ?? 0)} px per ft).`
-              : 'Using a standard 7 ft door or 4 ft window. Enter one real height for a better estimate.'}
+            {project.scaleSource === 'user' ? 'Using your measurement. ' : ''}
+            We assume a 7 ft door. If you know the real height of any part, enter it here.
           </p>
           <div className="field">
             <label htmlFor="scale-part">Part you measured</label>
