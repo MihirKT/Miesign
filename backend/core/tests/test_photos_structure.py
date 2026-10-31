@@ -108,3 +108,70 @@ def test_get_project_errors():
     with pytest.raises(AppError) as missing:
         projects.get_project("00000000-0000-0000-0000-000000000000")
     assert missing.value.status == 404
+
+
+@pytest.mark.django_db
+def test_upload_too_large_rejected(monkeypatch, settings):
+    settings.MAX_UPLOAD_BYTES = 100
+    monkeypatch.setattr(ai, "check_photo", lambda b, m: pytest.fail("AI should not run"))
+    project = projects.create("Test")
+    with pytest.raises(AppError) as err:
+        photos.upload(project, image_file())
+    assert err.value.code == "FILE_TOO_LARGE"
+
+
+@pytest.mark.django_db
+def test_decompression_bomb_rejected(monkeypatch):
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 1000)
+    project = projects.create("Test")
+    with pytest.raises(AppError) as err:
+        photos.upload(project, image_file())
+    assert err.value.code == "INVALID_IMAGE"
+
+
+@pytest.mark.parametrize("size", [(2, 2), (1, 1)])
+def test_local_quality_tiny_images_do_not_raise(size):
+    assert any("too small" in i for i in photos.local_quality(Image.new("RGB", size, (1, 2, 3))))
+
+
+def _project_with_photo(monkeypatch):
+    monkeypatch.setattr(ai, "check_photo", lambda b, m: GOOD)
+    project = projects.create("Test")
+    photos.upload(project, image_file())
+    project.refresh_from_db()
+    return project
+
+
+QUAD = [[0, 0], [1, 0], [1, 1], [0, 1]]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("item", [
+    "wall",
+    {"type": "wall", "quad": QUAD, "floor": "abc"},
+    {"type": "wall", "quad": [[0, 0], [float("nan"), 0], [1, 1], [0, 1]]},
+    {"type": "wall", "quad": [[0, 0], [True, 0], [1, 1], [0, 1]]},
+])
+def test_save_rejects_malformed_items(monkeypatch, item):
+    project = _project_with_photo(monkeypatch)
+    with pytest.raises(AppError) as err:
+        structure.save(project, [item])
+    assert err.value.code == "INVALID_REGION"
+
+
+@pytest.mark.django_db
+def test_set_scale_rejects_other_photo_component_and_bool(monkeypatch):
+    from core.models import Component
+    project = _project_with_photo(monkeypatch)
+    other = photos.upload(project, image_file())
+    assert other.id != project.primary_photo_id
+    foreign = Component.objects.create(project_id=project.id, photo_id=other.id, type="door",
+                                       quad=[[0, 0], [10, 0], [10, 100], [0, 100]], floor=0, source="user")
+    with pytest.raises(AppError) as err:
+        structure.set_scale(project, component_id=str(foreign.id), real_height_ft=7)
+    assert err.value.status == 404
+    own = Component.objects.create(project_id=project.id, photo_id=project.primary_photo_id, type="door",
+                                   quad=[[0, 0], [10, 0], [10, 100], [0, 100]], floor=0, source="user")
+    with pytest.raises(AppError) as err:
+        structure.set_scale(project, component_id=str(own.id), real_height_ft=True)
+    assert err.value.code == "INVALID_SCALE"

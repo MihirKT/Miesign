@@ -1,3 +1,5 @@
+import math
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -37,13 +39,27 @@ def detect(project):
     return component_dicts(project)
 
 
+def _is_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _clean_floor(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError, OverflowError):
+        raise AppError("INVALID_REGION", "Floor must be a whole number.")
+
+
 def _clean_quad(quad, width, height):
     if not isinstance(quad, list) or len(quad) != 4:
         raise AppError("INVALID_REGION", "Each region needs exactly 4 corner points.")
     try:
-        return [[min(max(float(x), 0), width), min(max(float(y), 0), height)] for x, y in quad]
+        pts = [[x, y] for x, y in quad]
+        if not all(_is_number(v) for pt in pts for v in pt):
+            raise ValueError
+        return [[min(max(float(x), 0), width), min(max(float(y), 0), height)] for x, y in pts]
     except (TypeError, ValueError):
-        raise AppError("INVALID_REGION", "Region corners must be numbers.")
+        raise AppError("INVALID_REGION", "Region corners must be finite numbers.")
 
 
 def save(project, items):
@@ -52,9 +68,12 @@ def save(project, items):
         raise AppError("INVALID_REGION", "components must be a list.")
     cleaned = []
     for item in items:
+        if not isinstance(item, dict):
+            raise AppError("INVALID_REGION", "Each part must be an object.")
         if item.get("type") not in COMPONENT_TYPES:
             raise AppError("INVALID_REGION", f"Unknown part type '{item.get('type')}'.")
-        cleaned.append({**item, "quad": _clean_quad(item.get("quad"), photo.width, photo.height)})
+        cleaned.append({**item, "quad": _clean_quad(item.get("quad"), photo.width, photo.height),
+                        "floor": _clean_floor(item.get("floor"))})
 
     with transaction.atomic():
         existing = {str(c.id): c for c in Component.objects.filter(project_id=project.id, photo_id=photo.id)}
@@ -64,13 +83,13 @@ def save(project, items):
             if current:
                 changed = current.type != item["type"] or current.quad != item["quad"]
                 current.type, current.quad = item["type"], item["quad"]
-                current.floor = int(item.get("floor") or 0)
+                current.floor = item["floor"]
                 current.source = "user" if changed else current.source
                 current.save()
                 kept.add(str(current.id))
             else:
                 Component.objects.create(project_id=project.id, photo_id=photo.id, type=item["type"],
-                                         quad=item["quad"], floor=int(item.get("floor") or 0), source="user")
+                                         quad=item["quad"], floor=item["floor"], source="user")
         for cid, c in existing.items():
             if cid not in kept:
                 c.soft_delete()
@@ -84,10 +103,11 @@ def set_scale(project, component_id=None, real_height_ft=None, use_default=False
         project.scale_source = "default"
         project.px_per_ft = default_scale(component_dicts(project), photo.height)
     else:
-        component = Component.objects.filter(id=parse_id(component_id, "component_id"), project_id=project.id).first()
+        component = Component.objects.filter(id=parse_id(component_id, "component_id"), project_id=project.id,
+                                              photo_id=project.primary_photo_id).first()
         if component is None:
             raise AppError("NOT_FOUND", "Part not found.", status=404)
-        if not isinstance(real_height_ft, (int, float)) or not MIN_REAL_FT <= real_height_ft <= MAX_REAL_FT:
+        if not _is_number(real_height_ft) or not MIN_REAL_FT <= real_height_ft <= MAX_REAL_FT:
             raise AppError("INVALID_SCALE", f"Enter a height between {MIN_REAL_FT} and {MAX_REAL_FT} ft.")
         try:
             project.px_per_ft = scale_from_component(component.quad, real_height_ft)

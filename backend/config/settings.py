@@ -58,4 +58,5 @@ RATE_ESTIMATE_CACHE_HOURS = int(os.environ.get("RATE_ESTIMATE_CACHE_HOURS", "24"
 MIN_PHOTO_SIDE = int(os.environ.get("MIN_PHOTO_SIDE", "800"))
 # Variance of Pillow FIND_EDGES on a 512px greyscale thumbnail; tuned in Task 13.
 BLUR_MIN_VARIANCE = float(os.environ.get("BLUR_MIN_VARIANCE", "40"))
+MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(15 * 1024 * 1024)))
 MAX_PHOTOS = int(os.environ.get("MAX_PHOTOS", "5"))

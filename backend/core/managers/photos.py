@@ -25,9 +25,10 @@ def local_quality(img):
     gray = img.convert("L")
     gray.thumbnail((THUMB_SIDE, THUMB_SIDE))
     # FIND_EDGES copies the 1px border unfiltered, which adds fake variance on flat images
-    edges = gray.filter(ImageFilter.FIND_EDGES).crop((1, 1, gray.width - 1, gray.height - 1))
-    if ImageStat.Stat(edges).var[0] < settings.BLUR_MIN_VARIANCE:
-        issues.append("Photo looks blurry or flat.")
+    if min(gray.size) >= 3:
+        edges = gray.filter(ImageFilter.FIND_EDGES).crop((1, 1, gray.width - 1, gray.height - 1))
+        if ImageStat.Stat(edges).var[0] < settings.BLUR_MIN_VARIANCE:
+            issues.append("Photo looks blurry or flat.")
     return issues
 
 
@@ -35,7 +36,7 @@ def _normalise(data):
     try:
         img = Image.open(BytesIO(data))
         img.load()
-    except (UnidentifiedImageError, OSError):
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
         raise AppError("INVALID_IMAGE", "That file is not a photo we can read. Upload a JPG, PNG or WEBP.")
     img = ImageOps.exif_transpose(img).convert("RGB")
     img.thumbnail((MAX_SIDE, MAX_SIDE))
@@ -47,6 +48,9 @@ def _normalise(data):
 def upload(project, uploaded):
     if Photo.objects.filter(project_id=project.id).count() >= settings.MAX_PHOTOS:
         raise AppError("PHOTO_LIMIT", f"A project can hold {settings.MAX_PHOTOS} photos. Delete one first.")
+    if uploaded.size > settings.MAX_UPLOAD_BYTES:
+        raise AppError("FILE_TOO_LARGE",
+                       f"Photo is larger than {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB. Use a smaller photo.")
     img, jpeg = _normalise(uploaded.read())
     issues = local_quality(img)
     tips = list(LOCAL_TIPS) if issues else []
