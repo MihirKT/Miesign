@@ -637,7 +637,7 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'core.catalog'`.
 ]
 ```
 
-That is 96 cities.
+That is 91 cities.
 
 `backend/core/catalog.py`:
 ```python
