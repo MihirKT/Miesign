@@ -1,3 +1,8 @@
+"""Tests that the catalog and city data are complete and consistent.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from core.catalog import city_tier, load_catalog, load_cities
 from core.estimation import COMPONENT_TYPES
 

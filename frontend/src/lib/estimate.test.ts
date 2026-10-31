@@ -1,3 +1,9 @@
+/**
+ * Tests category grouping and subtotals.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { expect, it } from 'vitest'
 import { groupByCategory } from './estimate'
 import type { EstimateLine } from './types'

@@ -1,3 +1,8 @@
+"""Tests the pure AI helpers: JSON extraction, box-to-quad conversion and the render prompt.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import json
 
 import pytest

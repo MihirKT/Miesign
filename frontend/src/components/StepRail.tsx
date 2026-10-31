@@ -1,3 +1,9 @@
+/**
+ * Side rail (bottom bar on phones) showing the six steps and which are unlocked.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import type { CSSProperties } from 'react'
 import { STEPS, type StepKey } from '../lib/steps'
 

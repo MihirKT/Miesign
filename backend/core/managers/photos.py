@@ -1,3 +1,8 @@
+"""Photo intake: normalise the upload, run local size/blur checks, then the AI house check, and pick the primary photo.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from io import BytesIO
 
 from django.conf import settings
@@ -17,6 +22,7 @@ LOCAL_TIPS = [
 ]
 
 
+# Cheap local checks run before the AI call so obviously bad photos cost no Gemini request.
 def local_quality(img):
     issues = []
     w, h = img.size
@@ -38,6 +44,7 @@ def _normalise(data):
         img.load()
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
         raise AppError("INVALID_IMAGE", "That file is not a photo we can read. Upload a JPG, PNG or WEBP.")
+    # Phones store rotation in EXIF; apply it so the pixels match what the user saw.
     img = ImageOps.exif_transpose(img).convert("RGB")
     img.thumbnail((MAX_SIDE, MAX_SIDE))
     buf = BytesIO()
@@ -65,6 +72,7 @@ def upload(project, uploaded):
                   quality_ok=ok, quality_report={"issues": issues, "tips": tips})
     photo.file.save(f"{photo.id}.jpg", ContentFile(jpeg), save=False)
     photo.save()
+    # The first usable photo becomes primary automatically so a one-photo user never has to choose.
     if ok and project.primary_photo_id is None:
         set_primary(project, photo.id)
     return photo
@@ -77,6 +85,7 @@ def set_primary(project, photo_id):
     if not photo.quality_ok:
         raise AppError("PHOTO_NOT_USABLE", "That photo did not pass the quality check. Pick another one.")
     project.primary_photo_id = photo.id
+    # A new photo has different pixel geometry, so any earlier scale no longer applies.
     project.px_per_ft = None
     project.scale_source = "default"
     project.save()

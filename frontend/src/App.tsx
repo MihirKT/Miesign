@@ -1,3 +1,9 @@
+/**
+ * App shell. Owns the project, catalog and current step, creates the project lazily on first upload, and resumes a project from the ?p= link.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import StepRail from './components/StepRail'
 import { api, errorMessage } from './lib/api'
@@ -39,11 +45,13 @@ export default function App() {
     }
   }, [])
 
+  // Cache the in-flight promise: a double-click or a fast second upload must not create two projects.
   const ensureProject = useCallback(async () => {
     if (project) return project
     pending.current ??= api
       .createProject()
       .then((created) => {
+        // The URL is the only credential (no accounts), so put it in the address bar straight away.
         window.history.replaceState(null, '', `?p=${created.id}`)
         setProject(created)
         return created

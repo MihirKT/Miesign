@@ -1,3 +1,9 @@
+/**
+ * State and city picker with an 'other city' fallback; saves the location through a callback.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useEffect, useState } from 'react'
 import { errorMessage } from '../lib/api'
 import type { StateEntry } from '../lib/types'

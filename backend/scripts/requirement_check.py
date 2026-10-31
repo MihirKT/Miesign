@@ -10,6 +10,8 @@ and by how much of the requested saturation survived.
 Usage (from backend/, venv active):
     python scripts/requirement_check.py
 Costs a few Gemini calls per case on the configured Vertex project.
+
+Miesign · Author: Mihir Kapildev Tiwari
 """
 import os
 import sys

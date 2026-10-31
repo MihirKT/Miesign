@@ -1,3 +1,8 @@
+"""Loads the material catalog and the state/city tier list from core/data/*.json and maps a city to its price tier.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import json
 from functools import lru_cache
 from pathlib import Path

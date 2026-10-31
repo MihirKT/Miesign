@@ -1,3 +1,8 @@
+"""Tests the geometry helpers: areas, point-in-polygon, scale and overlap warnings.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import pytest
 
 from core.estimation import (

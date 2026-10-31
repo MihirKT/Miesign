@@ -1,3 +1,9 @@
+/**
+ * The six workflow steps, which of them are unlocked for a project, and which one to resume at.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import type { Project } from './types'
 
 export const STEPS = [

@@ -1,3 +1,8 @@
+"""Django settings. Every tunable (AI models, GCP project, caps, cache windows, photo limits) is read from the environment with a safe default; see backend/.env.example.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import os
 from pathlib import Path
 

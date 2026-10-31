@@ -1,3 +1,8 @@
+"""Tests the HTTP API end to end through the Django test client with the AI layer stubbed.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from io import BytesIO
 
 import pytest

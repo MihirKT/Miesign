@@ -1,3 +1,9 @@
+/**
+ * Konva canvas showing the photo with draggable part outlines and corner handles.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Circle, Image as KImage, Layer, Line, Stage } from 'react-konva'
 import { moveCorner, translateQuad } from '../lib/quad'
@@ -83,7 +89,7 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
                 fill="transparent"
                 stroke={colors.regions[p.type] || colors.ink}
                 strokeWidth={i === selected ? 3 : 2}
-                hitStrokeWidth={HIT_WIDTH}
+                hitStrokeWidth={HIT_WIDTH} // wide invisible hit area: thin outlines are hard to tap on a phone
                 draggable={i === selected}
                 onClick={() => onSelect(i)}
                 onTap={() => onSelect(i)}
@@ -91,6 +97,7 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
                   const node = e.target
                   const dx = node.x() / scale
                   const dy = node.y() / scale
+                  // Konva moved the node; fold the offset into the quad and reset it so points stay absolute.
                   node.position({ x: 0, y: 0 })
                   onChange(i, translateQuad(p.quad, dx, dy, width, height))
                 }}

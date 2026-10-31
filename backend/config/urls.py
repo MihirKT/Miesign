@@ -1,3 +1,8 @@
+"""Root URL routes: the JSON API under /api/ and uploaded photos and renders under /media/.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from django.conf import settings
 from django.urls import include, path, re_path
 from django.views.static import serve

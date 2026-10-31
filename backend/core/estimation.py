@@ -1,3 +1,8 @@
+"""Pure estimation maths: polygon areas, scale, wall-minus-openings, quantities with wastage and the priced lines. No I/O, so every formula is unit-tested without a database.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import math
 from statistics import mean
 
@@ -64,6 +69,8 @@ def scale_from_component(quad, real_height_ft):
     return h / real_height_ft
 
 
+# No user measurement: infer feet-per-pixel from a part whose real size is standard, door first because
+# it varies least, then window, then assume the frame shows about 20 ft of facade.
 def default_scale(components, image_height):
     doors = [height_px(c["quad"]) for c in components if c["type"] == "door"]
     if doors:
@@ -74,6 +81,8 @@ def default_scale(components, image_height):
     return image_height / DEFAULT_VISIBLE_HEIGHT_FT
 
 
+# Walls are net of openings so paint is not priced on windows and doors; pillars count 4 faces because
+# only one face is visible in the photo; railings are priced by running length, which is the box width.
 def measure(component, components, px_per_ft, rate_unit):
     quad = component["quad"]
     if rate_unit == "rft":
@@ -120,6 +129,7 @@ DEFAULT_SCALE_ASSUMPTION = (
 )
 
 
+# Wastage is applied in the cost too (see estimate) so the quantity to buy and the money agree.
 def quantity(item, measure_value):
     factor = 1 + item["wastage_pct"] / 100
     unit = item["qty_unit"]

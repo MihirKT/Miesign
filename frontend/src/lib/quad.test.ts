@@ -1,3 +1,9 @@
+/**
+ * Tests quad building, clamping and moving.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { expect, it } from 'vitest'
 import { clampPoint, moveCorner, newPartQuad, rectQuad, translateQuad } from './quad'
 

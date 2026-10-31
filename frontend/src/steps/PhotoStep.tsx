@@ -1,3 +1,9 @@
+/**
+ * Step 01: upload a photo, show the quality-check result and tips, and set the city.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useState } from 'react'
 import CitySelect from '../components/CitySelect'
 import { api, errorMessage } from '../lib/api'

@@ -1,3 +1,8 @@
+"""Tests soft delete behaviour of the models.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import pytest
 
 from core.models import Project

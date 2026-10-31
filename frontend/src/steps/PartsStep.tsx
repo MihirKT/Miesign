@@ -1,3 +1,9 @@
+/**
+ * Step 02: detect parts, let the user edit them, and optionally set the real scale from one known height.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useEffect, useRef, useState } from 'react'
 import RegionCanvas from '../components/RegionCanvas'
 import { api, errorMessage } from '../lib/api'
@@ -45,6 +51,7 @@ export default function PartsStep({ project, onChange, onNext }: Props) {
     setMessage(null)
     try {
       const next = await action()
+      // A scale call leaves the parts untouched, so keep local state and selection as they are.
       if (kind !== 'scale') {
         setParts(next.components)
         setDirty(false)

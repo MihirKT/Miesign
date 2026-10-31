@@ -1,3 +1,8 @@
+"""Thin API views: parse the request, call a manager, shape the response. No business logic lives here.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response

@@ -1,3 +1,8 @@
+"""Database models. All inherit soft delete and UUID ids; relations are plain UUID columns, not foreign keys.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import uuid
 
 from django.db import models

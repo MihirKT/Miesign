@@ -1,3 +1,9 @@
+/**
+ * Before/after image slider for the original photo and the render.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useState, type CSSProperties } from 'react'
 
 interface Props {

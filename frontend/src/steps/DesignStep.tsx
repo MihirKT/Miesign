@@ -1,3 +1,9 @@
+/**
+ * Step 03: create a design by describing it, answering guided questions, or picking materials by hand.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useMemo, useState } from 'react'
 import { api, errorMessage } from '../lib/api'
 import AssignmentList from '../components/AssignmentList'

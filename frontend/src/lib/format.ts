@@ -1,3 +1,9 @@
+/**
+ * Display formatting: INR with Indian digit grouping, measures, part-type labels and short dates.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 const RUPEES = new Intl.NumberFormat('en-IN', {
   style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0,
 })

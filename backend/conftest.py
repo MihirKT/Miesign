@@ -1,3 +1,8 @@
+"""Pytest fixtures shared by all tests; keeps uploaded files out of the real media folder.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import pytest
 
 

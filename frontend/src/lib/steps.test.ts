@@ -1,3 +1,9 @@
+/**
+ * Tests step unlocking and resume logic.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { expect, it } from 'vitest'
 import type { Project } from './types'
 import { resumeStep, unlockedSteps } from './steps'

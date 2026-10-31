@@ -1,3 +1,8 @@
+"""Project lookup, create and update, plus small helpers (id parsing, primary photo, file bytes) shared by other managers.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import uuid
 
 from core.catalog import load_cities

@@ -1,3 +1,8 @@
+"""Design lifecycle: validate and clean specs from the AI or the user, build guided shortlists, save designs, and render previews under the per-project render cap.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import hashlib
 import json
 import re
@@ -37,6 +42,8 @@ def _component_types(value):
     return [t for t in _as_list(value) if isinstance(t, str) and t in COMPONENT_TYPES]
 
 
+# Specs come from an LLM or a user-edited client, so nothing in them is trusted: unknown materials,
+# absent parts, bad hex codes and materials used on the wrong part are dropped with a warning, not an error.
 def validate_spec(spec, catalog, components):
     if not isinstance(spec, dict) or not isinstance(spec.get("assignments"), list):
         raise AppError("INVALID_SPEC", "A design needs a list of assignments.")
@@ -102,6 +109,7 @@ def shortlist(answers, catalog):
     return items or list(catalog.values())
 
 
+# Hash of the cleaned spec: an unchanged design re-uses its saved render instead of spending a cap slot.
 def spec_hash(spec):
     return hashlib.sha256(json.dumps(spec, sort_keys=True).encode()).hexdigest()
 
@@ -183,6 +191,7 @@ def render(design):
     if design.render_file and design.render_spec_hash == current_hash:
         return design
     project = Project.objects.get(id=design.project_id)
+    # Claim a slot atomically in SQL so two parallel requests cannot both pass the cap check.
     claimed = Project.objects.filter(id=project.id, render_count__lt=settings.RENDER_CAP).update(
         render_count=F("render_count") + 1)
     if not claimed:
@@ -192,6 +201,7 @@ def render(design):
         prompt = ai.build_render_prompt(design.spec, component_dicts(project), load_catalog(), photo.width, photo.height)
         png = ai.render(read_bytes(photo), photo.mime, prompt, swatch_png=ai.build_swatch_card(design.spec))
     except Exception:
+        # The user got no picture, so they should not pay for the attempt.
         Project.objects.filter(id=project.id).update(render_count=F("render_count") - 1)
         raise
     design.render_file.save(f"{design.id}-{current_hash[:8]}.png", ContentFile(png), save=False)

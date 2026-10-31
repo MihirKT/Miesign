@@ -1,3 +1,9 @@
+/**
+ * Geometry for editable part outlines: build, clamp, move a corner, drag a whole quad.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import type { Point, Quad } from './types'
 
 // New parts start as a box this fraction of the photo's width/height.

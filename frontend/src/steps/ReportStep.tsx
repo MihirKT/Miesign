@@ -1,3 +1,9 @@
+/**
+ * Step 06: download the PDF report and copy the project link.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useState } from 'react'
 import { api } from '../lib/api'
 import type { Design, Project } from '../lib/types'

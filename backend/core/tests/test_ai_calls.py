@@ -1,3 +1,8 @@
+"""Tests the Gemini call wrapper: retry, bad JSON, schema use, rate search and render, with a fake client.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from types import SimpleNamespace
 
 import pytest

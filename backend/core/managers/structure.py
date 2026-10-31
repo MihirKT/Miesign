@@ -1,3 +1,8 @@
+"""Detected parts: run AI detection, clean the result, save user edits and manage the photo scale.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import math
 
 from django.db import transaction
@@ -19,6 +24,7 @@ def component_dicts(project):
              "confidence": c.confidence} for c in qs]
 
 
+# Only while the scale is still the default: a scale the user measured must survive re-detection and edits.
 def _refresh_default_scale(project, photo):
     if project.scale_source == "default":
         project.px_per_ft = default_scale(component_dicts(project), photo.height)
@@ -71,6 +77,7 @@ def ensure_wall(found):
 def detect(project):
     photo = primary_photo(project)
     found = drop_nested_walls(ensure_wall(ai.detect_structure(read_bytes(photo), photo.mime, photo.width, photo.height)))
+    # Re-detect replaces the whole set atomically; a half-written list would price a facade with missing parts.
     with transaction.atomic():
         Component.objects.filter(project_id=project.id, photo_id=photo.id).update(deleted_at=timezone.now())
         Component.objects.bulk_create([
@@ -118,6 +125,7 @@ def save(project, items):
         cleaned.append({**item, "quad": _clean_quad(item.get("quad"), photo.width, photo.height),
                         "floor": _clean_floor(item.get("floor"))})
 
+    # Full-list save: parts the client no longer sends are soft-deleted, so the client is the source of truth.
     with transaction.atomic():
         existing = {str(c.id): c for c in Component.objects.filter(project_id=project.id, photo_id=photo.id)}
         kept = set()
@@ -127,6 +135,7 @@ def save(project, items):
                 changed = current.type != item["type"] or current.quad != item["quad"]
                 current.type, current.quad = item["type"], item["quad"]
                 current.floor = item["floor"]
+                # Keep "ai" if only the floor changed; "user" marks geometry the person actually edited.
                 current.source = "user" if changed else current.source
                 current.save()
                 kept.add(str(current.id))

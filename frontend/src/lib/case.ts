@@ -1,3 +1,9 @@
+/**
+ * Recursive camelCase/snake_case key conversion for API payloads.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 const toCamel = (key: string) => key.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase())
 const toSnake = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)
 

@@ -1,3 +1,9 @@
+/**
+ * Tests rupee, measure, label and date formatting.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { expect, it } from 'vitest'
 import { inr, num, shortDate, typeLabel } from './format'
 

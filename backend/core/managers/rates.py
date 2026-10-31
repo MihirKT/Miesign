@@ -1,3 +1,8 @@
+"""Rate resolution: project override, then cached web rate, then Gemini grounded search, then tier-adjusted base rate.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import logging
 import math
 from datetime import timedelta
@@ -22,6 +27,8 @@ def _fallback(item, tier):
             "source": "estimated", "sources": []}
 
 
+# Web search results are averages scraped from pages; reject anything far from the catalog base
+# (0.3x-3x) so a unit mix-up (per sq m vs per sq ft) cannot reach a price.
 def _within(value, base):
     return BOUND_LOW * base <= value <= BOUND_HIGH * base
 
@@ -73,6 +80,8 @@ def get_rates(state, city, project_id=None):
     now = timezone.now()
     web_after = now - timedelta(days=settings.RATE_CACHE_DAYS)
     estimate_after = now - timedelta(hours=settings.RATE_ESTIMATE_CACHE_HOURS)
+    # Estimated rows expire after 24 h (web rows after 30 d) so a failed search is retried soon
+    # instead of pinning tier guesses for a month.
     cached = {
         r.material_id: r for r in RateCache.objects.filter(state=state, city=city)
         if r.fetched_at >= (web_after if r.source == "web" else estimate_after)
@@ -91,6 +100,7 @@ def get_rates(state, city, project_id=None):
             row = {**_fallback(item, tier), "fetched_at": None}
         result[mid] = {**row, "material_id": mid, "rate_unit": item["rate_unit"]}
 
+    # Overrides are applied last and per project, so they win over everything and never leak into the shared cache.
     if project_id:
         for o in RateOverride.objects.filter(project_id=project_id):
             row = result.get(o.material_id)

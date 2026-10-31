@@ -1,4 +1,7 @@
-"""Live end-to-end run against Vertex. Usage: python scripts/smoke_ai.py scripts/samples/house1.png Maharashtra Pune"""
+"""Live end-to-end run against Vertex. Usage: python scripts/smoke_ai.py scripts/samples/house1.png Maharashtra Pune
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
 import json
 import os
 import sys

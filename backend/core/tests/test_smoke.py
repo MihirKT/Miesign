@@ -1,3 +1,8 @@
+"""Smoke test that the settings load with the expected defaults.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from django.conf import settings
 
 

@@ -1,6 +1,13 @@
+/**
+ * Typed client for the Django API. Converts keys between camelCase (frontend) and snake_case (backend) and turns error responses into ApiError with a readable message.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { keysToCamel, keysToSnake } from './case'
 import type { Answers, Design, DesignSpec, Estimate, Material, Part, Project, RateRow, StateEntry } from './types'
 
+// Empty in dev (the Vite proxy handles /api); set VITE_API_URL when the API lives on another origin.
 const BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 const FALLBACK = 'Something went wrong. Try again.'
 

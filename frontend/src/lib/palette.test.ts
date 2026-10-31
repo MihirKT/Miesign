@@ -1,3 +1,9 @@
+/**
+ * Tests the paint presets and colour naming.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { describe, expect, it } from 'vitest'
 import { PAINT_PRESETS, colorText } from './palette'
 

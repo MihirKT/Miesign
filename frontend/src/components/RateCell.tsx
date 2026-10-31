@@ -1,3 +1,9 @@
+/**
+ * Editable rate cell that commits an override on blur or Enter and reports invalid input.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useEffect, useState } from 'react'
 
 interface Props {

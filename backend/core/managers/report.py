@@ -1,3 +1,8 @@
+"""Builds the downloadable PDF estimate (INR formatting, tables, render and photo).
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import logging
 import os
 from datetime import datetime, timezone

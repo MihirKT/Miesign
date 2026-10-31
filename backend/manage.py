@@ -1,3 +1,8 @@
+"""Django command-line entry point (runserver, migrate, test tooling).
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 #!/usr/bin/env python
 import os
 import sys

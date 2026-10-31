@@ -1,3 +1,8 @@
+"""Tests PDF generation and INR formatting.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from core.managers.report import build_pdf, inr
 
 ESTIMATE = {

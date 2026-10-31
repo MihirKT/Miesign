@@ -1,3 +1,8 @@
+"""The only module that talks to Gemini on Vertex: photo check, part detection, design parsing and recommendation, rate search and image render. It returns plain data; it never touches the database.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import json
 import logging
 import time
@@ -14,6 +19,8 @@ from core.estimation import COMPONENT_TYPES, bbox
 
 logger = logging.getLogger(__name__)
 BOX_SCALE = 1000
+# Gemini boxes are [ymin, xmin, ymax, xmax] on a 0-1000 grid whatever the image size.
+# The schema forces that shape so detection does not drift into free-form JSON.
 DETECTION_SCHEMA = {
     "type": "OBJECT",
     "properties": {
@@ -34,6 +41,8 @@ DETECTION_SCHEMA = {
     "required": ["components"],
 }
 RETRY_DELAY_SECONDS = 1
+# Image models happily "improve" a photo. These lines pin geometry so the render stays comparable
+# with the original and the measured areas still describe what the user sees.
 HARD_CONSTRAINTS = [
     "Keep the exact same camera angle, framing, perspective, lighting direction and image size.",
     "Do not move, add, remove or resize any window, door, balcony, pillar, wall, roof or gate.",
@@ -44,6 +53,7 @@ HARD_CONSTRAINTS = [
 ]
 
 
+# 503 rather than 500: the failure is the upstream model, and the frontend shows the message as-is.
 class AiUnavailable(AppError):
     def __init__(self, message="The AI service did not respond. Try again in a minute."):
         super().__init__("AI_UNAVAILABLE", message, status=503)
@@ -106,6 +116,7 @@ def client():
     return genai.Client(vertexai=True, project=settings.GCP_PROJECT, location=settings.GCP_LOCATION)
 
 
+# One retry covers transient Vertex errors (rate limit, 5xx); more would make the UI hang on a real outage.
 def _generate(model, contents, config):
     last_error = None
     for attempt in range(2):
@@ -151,6 +162,8 @@ def _image_part(image_bytes, mime):
     return types.Part.from_bytes(data=image_bytes, mime_type=mime)
 
 
+# The model only classifies and describes. It never measures or does arithmetic: areas and costs come
+# from core.estimation so every number is reproducible and testable.
 def check_photo(image_bytes, mime):
     prompt = (
         "You check photos for a house-exterior renovation tool. Reply with JSON only: "
@@ -310,6 +323,8 @@ def _grounding_uris(response):
     return [c.web.uri for c in chunks if getattr(c, "web", None) and c.web.uri][:MAX_SOURCES]
 
 
+# Grounded search (no response schema possible with the search tool), so the reply is parsed and
+# sanity-bounded by managers.rates before it is trusted.
 def search_rates(state, city, items):
     wanted = [{"material_id": i["id"], "name": i["name"], "rate_unit": i["rate_unit"]} for i in items]
     prompt = (
@@ -334,6 +349,7 @@ def search_rates(state, city, items):
     return rows
 
 
+# Layout of the paint swatch card sent next to the photo (see build_swatch_card).
 SWATCH_TILE = 200
 SWATCH_GAP = 10
 SWATCH_LABEL_HEIGHT = 40

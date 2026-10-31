@@ -1,3 +1,8 @@
+"""Maps the 18 API endpoints to their view functions.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from django.urls import path
 
 from core import views

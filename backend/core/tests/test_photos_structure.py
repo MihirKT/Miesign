@@ -1,3 +1,8 @@
+"""Tests photo intake checks and part detection, cleanup, saving and scale.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from io import BytesIO
 
 import pytest

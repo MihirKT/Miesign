@@ -1,3 +1,9 @@
+/**
+ * Small React hooks: elapsed seconds for long AI calls and an animated count-up for totals.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useEffect, useRef, useState } from 'react'
 
 const COUNT_UP_MS = 400
@@ -20,6 +26,7 @@ export function useCountUp(value: number): number {
   const [shown, setShown] = useState(value)
   const from = useRef(value)
   useEffect(() => {
+    // Respect reduced motion: jump straight to the value instead of animating.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       from.current = value
       setShown(value)

@@ -1,3 +1,9 @@
+/**
+ * Tests key conversion in both directions, including nested arrays and objects.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { expect, it } from 'vitest'
 import { keysToCamel, keysToSnake } from './case'
 

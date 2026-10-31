@@ -1,3 +1,9 @@
+/**
+ * Step 05: itemised INR estimate by category with editable rates and their sources.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import RateCell from '../components/RateCell'
 import { api, errorMessage } from '../lib/api'

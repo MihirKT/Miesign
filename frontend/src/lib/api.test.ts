@@ -1,3 +1,9 @@
+/**
+ * Tests the API client: key conversion, error messages and network failure.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { afterEach, expect, it, vi } from 'vitest'
 import { api } from './api'
 

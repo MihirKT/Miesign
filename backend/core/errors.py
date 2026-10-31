@@ -1,3 +1,8 @@
+"""AppError and the DRF exception handler that turns every failure into one JSON error shape the frontend can show.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 

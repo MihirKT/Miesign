@@ -1,3 +1,8 @@
+"""Tests priced estimate lines, quantities and wastage, with hand-computed expected values.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from core.estimation import estimate, quantity, resolve_assignments
 
 PAINT = {"id": "paint", "name": "Paint", "category": "Paint", "applies_to": ["wall", "pillar"],

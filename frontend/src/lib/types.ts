@@ -1,3 +1,9 @@
+/**
+ * Shared TypeScript types mirroring the API responses.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 export const COMPONENT_TYPES = [
   'wall', 'window', 'door', 'balcony', 'pillar', 'parapet', 'gate', 'roof_edge', 'railing',
 ] as const

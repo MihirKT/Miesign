@@ -1,3 +1,9 @@
+/**
+ * Lists a design's material assignments with their colour chips.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { typeLabel } from '../lib/format'
 import { colorText } from '../lib/palette'
 import type { Assignment, Material } from '../lib/types'

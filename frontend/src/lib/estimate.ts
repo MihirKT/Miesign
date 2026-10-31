@@ -1,3 +1,9 @@
+/**
+ * Groups estimate lines by category and sums material, labour and total per group.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import type { EstimateLine } from './types'
 
 export interface CategoryGroup {

@@ -1,3 +1,8 @@
+"""Turns models into the JSON dicts returned by the API (absolute media URLs, snake_case keys).
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 from django.conf import settings
 
 from core.managers.structure import component_dicts

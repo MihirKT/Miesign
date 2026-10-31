@@ -1,3 +1,9 @@
+/**
+ * Step 04: render the design on the photo and compare it with the original, within the per-project render cap.
+ *
+ * Miesign · Author: Mihir Kapildev Tiwari
+ */
+
 import { useState } from 'react'
 import AssignmentList from '../components/AssignmentList'
 import CompareSlider from '../components/CompareSlider'
@@ -29,6 +35,7 @@ export default function PreviewStep({ project, design, catalog, onChange, onSele
     setDone('')
     try {
       await api.render(design.id)
+      // Refetch the project: the server owns render_count, and a failed render is refunded there.
       onChange(await api.getProject(project.id))
       setDone('Preview ready.')
     } catch (e) {

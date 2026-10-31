@@ -1,3 +1,8 @@
+"""Tests spec validation, guided shortlists, saving designs and the render cap.
+
+Miesign · Author: Mihir Kapildev Tiwari
+"""
+
 import pytest
 from django.core.files.base import ContentFile
 
