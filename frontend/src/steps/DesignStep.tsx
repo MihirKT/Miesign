@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { api, errorMessage } from '../lib/api'
+import AssignmentList from '../components/AssignmentList'
 import { typeLabel } from '../lib/format'
+import { PAINT_PRESETS, colorText } from '../lib/palette'
 import { useElapsed } from '../lib/hooks'
 import type { Answers, Assignment, ComponentType, Design, DesignSpec, Material, Project } from '../lib/types'
 
@@ -8,8 +10,9 @@ type Tab = 'describe' | 'guided' | 'manual'
 type Pick = { materialId: string; color: string | null }
 
 const EXAMPLES = [
-  'Light grey texture paint on the walls, slate cladding on the pillars, glass railing on the balcony',
-  'Keep it simple: cream paint everywhere and black steel railings',
+  { label: 'Terracotta walls', text: 'Terracotta walls, cream parapet, black railing' },
+  { label: 'Sage green walls', text: 'Sage green walls, wooden louvers, steel railing' },
+  { label: 'Charcoal ACP panels', text: 'Charcoal ACP panels, white pillars, glass railing' },
 ]
 const CHOICES = {
   budget: [['low', 'Tight'], ['mid', 'Balanced'], ['high', 'Premium']],
@@ -109,9 +112,6 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
     setTab('manual')
   }
 
-  const summary = (d: Design) =>
-    d.spec.assignments.map((a) => `${byId.get(a.materialId)?.name ?? a.materialId} on ${typeLabel(a.target.split(':')[1] ?? '')}`).join(' · ')
-
   return (
     <section aria-labelledby="design-h">
       <header className="stage-head">
@@ -136,7 +136,7 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                 <textarea id="design-text" maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} />
               </div>
               <div className="chips" aria-label="Examples">
-                {EXAMPLES.map((ex) => <button key={ex} type="button" className="chip" onClick={() => setText(ex)}>{ex.split(',')[0]}</button>)}
+                {EXAMPLES.map((ex) => <button key={ex.label} type="button" className="chip" onClick={() => setText(ex.text)}>{ex.label}</button>)}
               </div>
               <button type="button" className="btn btn-primary" disabled={busy || text.trim().length < 3} aria-busy={busy}
                 onClick={() => create(() => api.designFromText(project.id, text), () => 'Design created.')}>
@@ -212,6 +212,15 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                         value={pick?.color ?? DEFAULT_SWATCH}
                         onChange={(e) => setPicks((p) => ({ ...p, [t]: { materialId: p[t]?.materialId ?? '', color: e.target.value } }))} />
                     </div>
+                    <div className="swatches" role="group" aria-label={`${typeLabel(t)} quick colours`}>
+                      {PAINT_PRESETS.map((s) => (
+                        <button key={s.hex} type="button" className="swatch-btn" style={{ background: s.hex }}
+                          aria-label={`Use ${s.name} ${s.hex}`} aria-pressed={pick?.color?.toLowerCase() === s.hex.toLowerCase()}
+                          disabled={!pick?.materialId}
+                          onClick={() => setPicks((p) => ({ ...p, [t]: { materialId: p[t]?.materialId ?? '', color: s.hex } }))} />
+                      ))}
+                    </div>
+                    {pick?.color && <span className="mono">{colorText(pick.color)}</span>}
                     {chosen && <span className="badge">Lasts {chosen.durabilityYears} yrs · {chosen.maintenance} upkeep</span>}
                   </div>
                 )
@@ -241,7 +250,9 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                   <span className="badge">{MODE_LABEL[d.mode]}</span>
                   {d.id === activeDesignId && <span className="badge web">In use</span>}
                   <h3>{d.name}</h3>
-                  <p className="lede">{summary(d) || 'No materials applied.'}</p>
+                  {d.spec.assignments.length > 0
+                    ? <AssignmentList assignments={d.spec.assignments} catalog={catalog} />
+                    : <p className="lede">No materials applied.</p>}
                   {d.rationale && <p>{d.rationale}</p>}
                   {d.warnings.length > 0 && <div className="notice warn"><ul>{d.warnings.map((w) => <li key={w}>{w}</li>)}</ul></div>}
                   <div className="row">
