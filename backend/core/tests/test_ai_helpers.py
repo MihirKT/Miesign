@@ -37,7 +37,7 @@ def test_render_prompt_contains_constraints_and_targets():
 
     assert any("camera angle" in c for c in payload["hard_constraints"])
     assert payload["changes"][0]["apply_to"] == "the pillar inside the box x 10%-20%, y 0%-50% of the image"
-    assert payload["changes"][1]["apply_to"] == "every wall surface"
+    assert payload["changes"][1]["apply_to"] == "every wall surface"  # no wall detected, so no boxes to name
     assert payload["changes"][1]["material"] == "dark grey slate cladding"
     assert payload["keep_unchanged"] == ["window"]
 
@@ -68,3 +68,10 @@ def test_palette_matches_frontend():
     ts = (Path(__file__).resolve().parents[3] / "frontend/src/lib/palette.ts").read_text(encoding="utf-8")
     frontend = {n.lower(): h for n, h in re.findall(r"name: '([^']+)', hex: '(#[0-9A-F]{6})'", ts)}
     assert frontend == PAINT_PRESETS
+
+
+def test_render_prompt_names_where_typed_parts_are():
+    components = [{"id": "w1", "type": "wall", "quad": [[0, 0], [500, 0], [500, 1000], [0, 1000]]}]
+    spec = {"assignments": [{"target": "type:wall", "material_id": "slate"}]}
+    payload = json.loads(build_render_prompt(spec, components, CATALOG, 1000, 1000).split("\n", 1)[1])
+    assert payload["changes"][0]["apply_to"] == "every wall surface, found at x 0%-50%, y 0%-100% of the image"

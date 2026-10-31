@@ -76,6 +76,14 @@ def box_to_quad(box_2d, width, height):
     return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
 
 
+MAX_PROMPT_BOXES = 6
+
+
+def _box_text(quad, width, height):
+    x0, y0, x1, y1 = bbox(quad)
+    return f"x {x0 / width:.0%}-{x1 / width:.0%}, y {y0 / height:.0%}-{y1 / height:.0%}"
+
+
 def build_render_prompt(spec, components, catalog, width, height):
     by_id = {str(c["id"]): c for c in components}
     changes = []
@@ -86,15 +94,16 @@ def build_render_prompt(spec, components, catalog, width, height):
         target = a["target"]
         if target.startswith("type:"):
             where = f"every {target[5:].replace('_', ' ')} surface"
+            # Name where they are: on bare-concrete houses the model otherwise left walls unpainted (seen live).
+            boxes = [_box_text(c["quad"], width, height) for c in components if c["type"] == target[5:]]
+            if boxes:
+                where += f", found at {'; '.join(boxes[:MAX_PROMPT_BOXES])} of the image"
         else:
             component = by_id.get(target.split(":", 1)[1])
             if component is None:
                 continue
-            x0, y0, x1, y1 = bbox(component["quad"])
-            where = (
-                f"the {component['type'].replace('_', ' ')} inside the box "
-                f"x {x0 / width:.0%}-{x1 / width:.0%}, y {y0 / height:.0%}-{y1 / height:.0%} of the image"
-            )
+            where = (f"the {component['type'].replace('_', ' ')} inside the box "
+                     f"{_box_text(component['quad'], width, height)} of the image")
         changes.append({"apply_to": where, "material": item["render_hint"],
                         "color": a.get("color"), "finish": a.get("finish")})
     payload = {
