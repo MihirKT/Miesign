@@ -4,6 +4,7 @@ import re
 
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.db.models import F
 
 from core import ai
@@ -14,7 +15,7 @@ from core.managers.projects import parse_id, primary_photo, read_bytes
 from core.managers.structure import component_dicts
 from core.models import Design, Project
 
-HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
+HEX = re.compile(r"#[0-9A-Fa-f]{6}")
 MAX_PALETTE = 4
 MAX_TEXT = 1000
 MIN_TEXT = 3
@@ -28,6 +29,14 @@ ANSWER_CHOICES = {
 EXCLUDED_BUDGETS = {"low": {"high"}, "mid": set(), "high": set()}
 
 
+def _as_list(value):
+    return value if isinstance(value, list) else []
+
+
+def _component_types(value):
+    return [t for t in _as_list(value) if isinstance(t, str) and t in COMPONENT_TYPES]
+
+
 def validate_spec(spec, catalog, components):
     if not isinstance(spec, dict) or not isinstance(spec.get("assignments"), list):
         raise AppError("INVALID_SPEC", "A design needs a list of assignments.")
@@ -37,7 +46,9 @@ def validate_spec(spec, catalog, components):
     for a in spec["assignments"]:
         if not isinstance(a, dict):
             continue
-        target, item = str(a.get("target", "")), catalog.get(a.get("material_id"))
+        material_id = a.get("material_id")
+        target = str(a.get("target", ""))
+        item = catalog.get(material_id) if isinstance(material_id, str) else None
         if item is None:
             warnings.append(f"Material '{a.get('material_id')}' is not in the catalog; skipped.")
             continue
@@ -59,10 +70,10 @@ def validate_spec(spec, catalog, components):
             continue
         color = a.get("color")
         clean.append({"target": target, "material_id": item["id"],
-                      "color": color if isinstance(color, str) and HEX.match(color) else None,
+                      "color": color if isinstance(color, str) and HEX.fullmatch(color) else None,
                       "finish": str(a.get("finish") or "")[:40]})
-    palette = [c for c in spec.get("palette", []) if isinstance(c, str) and HEX.match(c)][:MAX_PALETTE]
-    keep = [t for t in spec.get("keep_unchanged", []) if t in COMPONENT_TYPES]
+    palette = [c for c in _as_list(spec.get("palette")) if isinstance(c, str) and HEX.fullmatch(c)][:MAX_PALETTE]
+    keep = _component_types(spec.get("keep_unchanged"))
     return {"style": str(spec.get("style") or "")[:30], "palette": palette,
             "assignments": clean, "keep_unchanged": keep}, warnings
 
@@ -73,11 +84,11 @@ def validate_answers(answers):
     clean = {}
     for key, choices in ANSWER_CHOICES.items():
         value = answers.get(key)
-        if value not in choices:
+        if not isinstance(value, str) or value not in choices:
             raise AppError("INVALID_ANSWERS", f"Pick one of {sorted(choices)} for {key}.")
         clean[key] = value
     clean["color_mood"] = str(answers.get("color_mood") or "")[:60]
-    clean["keep_unchanged"] = [t for t in answers.get("keep_unchanged") or [] if t in COMPONENT_TYPES]
+    clean["keep_unchanged"] = _component_types(answers.get("keep_unchanged"))
     return clean
 
 
@@ -112,8 +123,10 @@ def from_text(project, text):
         raise AppError("INVALID_TEXT", f"Describe the design in {MIN_TEXT}-{MAX_TEXT} characters.")
     components, catalog = component_dicts(project), load_catalog()
     raw = ai.parse_text(text, _present_types(components), catalog)
+    if not isinstance(raw, dict) or not isinstance(raw.get("assignments"), list):
+        raise ai.AiUnavailable("The AI returned an unreadable design. Try again.")
     spec, warnings = validate_spec(raw, catalog, components)
-    notes = [str(n) for n in raw.get("notes", [])] if isinstance(raw, dict) else []
+    notes = [n[:200] for n in _as_list(raw.get("notes")) if isinstance(n, str)][:5]
     return Design.objects.create(project_id=project.id, name="Your description", mode="free_text",
                                  input={"text": text}, spec=spec, warnings=notes + warnings)
 
@@ -122,16 +135,20 @@ def recommend(project, answers):
     answers = validate_answers(answers)
     components, catalog = component_dicts(project), load_catalog()
     proposals = ai.recommend(answers, shortlist(answers, catalog), _present_types(components))
+    if not isinstance(proposals, list):
+        proposals = []
     created = []
-    for p in proposals[:MAX_DESIGNS_PER_REQUEST]:
-        raw = p.get("spec") or {}
-        if isinstance(raw, dict):
-            raw.setdefault("keep_unchanged", answers["keep_unchanged"])
-        spec, warnings = validate_spec(raw, catalog, components)
-        created.append(Design.objects.create(
-            project_id=project.id, name=str(p.get("name") or "Suggested design")[:60], mode="guided",
-            input=answers, spec=spec, rationale=str(p.get("rationale") or "")[:600], warnings=warnings,
-        ))
+    with transaction.atomic():
+        for p in proposals[:MAX_DESIGNS_PER_REQUEST]:
+            raw = p.get("spec") if isinstance(p, dict) else None
+            if not isinstance(raw, dict) or not isinstance(raw.get("assignments"), list):
+                continue
+            spec, warnings = validate_spec(raw, catalog, components)
+            spec["keep_unchanged"] = list(dict.fromkeys(answers["keep_unchanged"] + spec["keep_unchanged"]))
+            created.append(Design.objects.create(
+                project_id=project.id, name=str(p.get("name") or "Suggested design")[:60], mode="guided",
+                input=answers, spec=spec, rationale=str(p.get("rationale") or "")[:600], warnings=warnings,
+            ))
     if not created:
         raise AppError("NO_SUGGESTIONS", "We could not suggest designs. Try different answers or describe it yourself.")
     return created
@@ -163,10 +180,10 @@ def render(design):
         photo = primary_photo(project)
         prompt = ai.build_render_prompt(design.spec, component_dicts(project), load_catalog(), photo.width, photo.height)
         png = ai.render(read_bytes(photo), photo.mime, prompt)
-    except AppError:
+    except Exception:
         Project.objects.filter(id=project.id).update(render_count=F("render_count") - 1)
         raise
     design.render_file.save(f"{design.id}-{current_hash[:8]}.png", ContentFile(png), save=False)
     design.render_spec_hash = current_hash
-    design.save()
+    design.save(update_fields=["render_file", "render_spec_hash", "updated_at"])
     return design
