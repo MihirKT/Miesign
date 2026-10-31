@@ -89,7 +89,7 @@ export default function App() {
           />
         )}
         {!loading && step === 'preview' && project && design && (
-          <PreviewStep project={project} design={design} onChange={setProject} onSelectDesign={setDesignId} onNext={() => go('estimate')} />
+          <PreviewStep project={project} design={design} catalog={catalog} onChange={setProject} onSelectDesign={setDesignId} onNext={() => go('estimate')} />
         )}
         {!loading && step === 'estimate' && project && design && <EstimateStep project={project} design={design} onNext={() => go('report')} />}
         {!loading && step === 'report' && project && design && <ReportStep project={project} design={design} />}

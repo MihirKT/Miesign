@@ -1,18 +1,20 @@
 import { useState } from 'react'
+import AssignmentList from '../components/AssignmentList'
 import CompareSlider from '../components/CompareSlider'
 import { api, errorMessage } from '../lib/api'
 import { useElapsed } from '../lib/hooks'
-import type { Design, Project } from '../lib/types'
+import type { Design, Material, Project } from '../lib/types'
 
 interface Props {
   project: Project
   design: Design
+  catalog: Material[]
   onChange: (p: Project) => void
   onSelectDesign: (id: string) => void
   onNext: () => void
 }
 
-export default function PreviewStep({ project, design, onChange, onSelectDesign, onNext }: Props) {
+export default function PreviewStep({ project, design, catalog, onChange, onSelectDesign, onNext }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState('')
@@ -55,6 +57,12 @@ export default function PreviewStep({ project, design, onChange, onSelectDesign,
             <CompareSlider before={photo.url} after={design.renderUrl} alt="Your house" />
           ) : (
             photo && <img src={photo.url} alt="Your house, original" />
+          )}
+          {design.spec.assignments.length > 0 && (
+            <div className="stack">
+              <h2>What changes</h2>
+              <AssignmentList assignments={design.spec.assignments} catalog={catalog} partFirst />
+            </div>
           )}
           {busy && <p className="progress-line">Applying materials to your photo… {elapsed}s (usually 20–40 s)</p>}
           <p role="status" aria-live="polite" className={done ? 'notice ok' : undefined}>{done}</p>
