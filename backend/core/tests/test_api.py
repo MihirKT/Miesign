@@ -108,3 +108,19 @@ def test_detect_empty_still_allows_manual_parts(api, monkeypatch):
 def test_catalog_and_locations(api):
     assert len(api.get("/api/catalog").json()["materials"]) >= 10
     assert api.get("/api/locations").json()["states"][0]["cities"]
+
+
+@pytest.mark.django_db
+def test_create_rejects_non_object_json_body(api):
+    response = api.post("/api/project/create", [1, 2], format="json")
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "INVALID_BODY"
+
+
+@pytest.mark.django_db
+def test_scale_set_false_string_does_not_use_default(api):
+    pid = api.post("/api/project/create", {}, format="json").json()["id"]
+    api.post(f"/api/photo/upload?project_id={pid}", {"file": jpeg()}, format="multipart")
+    response = api.post(f"/api/scale/set?project_id={pid}", {"use_default": "false"}, format="multipart")
+    assert response.status_code in (400, 404)
+    assert "error" in response.json()
