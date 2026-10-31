@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from core import ai
 from core.errors import AppError
-from core.estimation import COMPONENT_TYPES, bbox, default_scale, scale_from_component
+from core.estimation import COMPONENT_TYPES, bbox, bbox_overlap, default_scale, scale_from_component
 from core.managers.projects import parse_id, primary_photo, read_bytes
 from core.models import Component
 
@@ -39,19 +39,13 @@ def _box_area(quad):
     return max(x1 - x0, 0) * max(y1 - y0, 0)
 
 
-def _overlap_area(a, b):
-    ax0, ay0, ax1, ay1 = bbox(a)
-    bx0, by0, bx1, by1 = bbox(b)
-    return max(min(ax1, bx1) - max(ax0, bx0), 0) * max(min(ay1, by1) - max(ay0, by0), 0)
-
-
 def drop_nested_walls(found):
     """Remove wall boxes that sit mostly inside a larger wall, so their area isn't priced twice."""
     walls = sorted((c for c in found if c["type"] == "wall"), key=lambda c: _box_area(c["quad"]), reverse=True)
     kept = []
     for wall in walls:
         area = _box_area(wall["quad"])
-        if area and any(_overlap_area(wall["quad"], k["quad"]) / area > NESTED_WALL_RATIO for k in kept):
+        if area and any(bbox_overlap(wall["quad"], k["quad"]) / area > NESTED_WALL_RATIO for k in kept):
             continue
         kept.append(wall)
     return [c for c in found if c["type"] != "wall" or c in kept]

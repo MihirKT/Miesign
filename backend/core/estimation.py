@@ -98,7 +98,7 @@ def measure(component, components, px_per_ft, rate_unit):
     return area
 
 
-def _bbox_overlap(a, b):
+def bbox_overlap(a, b):
     ax0, ay0, ax1, ay1 = bbox(a)
     bx0, by0, bx1, by1 = bbox(b)
     w = min(ax1, bx1) - max(ax0, bx0)
@@ -112,7 +112,7 @@ def walls_overlap_warnings(components):
     for i, a in enumerate(walls):
         for b in walls[i + 1:]:
             smaller = min(polygon_area_px(a["quad"]), polygon_area_px(b["quad"]))
-            if smaller > 0 and _bbox_overlap(a["quad"], b["quad"]) / smaller > OVERLAP_WARN_RATIO:
+            if smaller > 0 and bbox_overlap(a["quad"], b["quad"]) / smaller > OVERLAP_WARN_RATIO:
                 warnings.append("Two wall regions overlap; that area is counted twice. Adjust them on the Parts step.")
     return warnings
 
