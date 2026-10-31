@@ -4,7 +4,8 @@ import { moveCorner, translateQuad } from '../lib/quad'
 import { COMPONENT_TYPES, type Part, type Quad } from '../lib/types'
 
 const HANDLE_RADIUS = 9
-const HIT_WIDTH = 14
+const HIT_WIDTH = 24
+const HANDLE_HIT_RADIUS = 22
 
 interface Props {
   src: string
@@ -33,6 +34,7 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
   const wrapRef = useRef<HTMLDivElement>(null)
   const [boxWidth, setBoxWidth] = useState(0)
   const [image, setImage] = useState<HTMLImageElement | null>(null)
+  const [failed, setFailed] = useState(false)
   const colors = useTokenColors()
 
   useEffect(() => {
@@ -44,17 +46,22 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
   }, [])
 
   useEffect(() => {
+    setImage(null)
+    setFailed(false)
     const img = new window.Image()
     img.onload = () => setImage(img)
+    img.onerror = () => setFailed(true)
     img.src = src
-    return () => { img.onload = null }
+    return () => { img.onload = null; img.onerror = null }
   }, [src])
 
   const scale = boxWidth > 0 ? boxWidth / width : 0
   const active = selected !== null ? parts[selected] : undefined
 
   return (
-    <div ref={wrapRef} className="canvas-wrap">
+    <div ref={wrapRef} className="canvas-wrap" role="img"
+      aria-label="Photo with outlined parts. Use the list to edit parts with a keyboard.">
+      {failed && <p className="notice error">Couldn't load the photo.</p>}
       {scale > 0 && (
         <Stage
           width={boxWidth}
@@ -70,7 +77,7 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
                 points={p.quad.flatMap(([x, y]) => [x * scale, y * scale])}
                 closed
                 fill="transparent"
-                stroke={colors.regions[p.type]}
+                stroke={colors.regions[p.type] || colors.ink}
                 strokeWidth={i === selected ? 3 : 2}
                 hitStrokeWidth={HIT_WIDTH}
                 draggable={i === selected}
@@ -95,7 +102,17 @@ export default function RegionCanvas({ src, width, height, parts, selected, onSe
                 stroke={colors.ink}
                 strokeWidth={2}
                 draggable
-                onDragMove={(e) => onChange(selected, moveCorner(active.quad, k, [e.target.x() / scale, e.target.y() / scale], width, height))}
+                hitFunc={(ctx, shape) => {
+                  ctx.beginPath()
+                  ctx.arc(0, 0, HANDLE_HIT_RADIUS, 0, Math.PI * 2)
+                  ctx.closePath()
+                  ctx.fillStrokeShape(shape)
+                }}
+                onDragMove={(e) => {
+                  const quad = moveCorner(active.quad, k, [e.target.x() / scale, e.target.y() / scale], width, height)
+                  e.target.position({ x: quad[k][0] * scale, y: quad[k][1] * scale })
+                  onChange(selected, quad)
+                }}
               />
             ))}
           </Layer>

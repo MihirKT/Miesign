@@ -133,7 +133,7 @@ textarea { min-height: 112px; resize: vertical; }
   display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: var(--space-sm);
   padding: var(--space-xs) var(--space-2xs); border-bottom: var(--rule-hair);
 }
-.part-row[aria-selected="true"] { background: var(--color-accent-wash); }
+.part-row[aria-current="true"] { background: var(--color-accent-wash); }
 .swatch { width: 12px; height: 12px; border-radius: 2px; }
 
 /* 03 design */
