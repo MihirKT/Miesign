@@ -1,0 +1,64 @@
+/* Hallmark · macrostructure: Narrative Workflow · nav: N3 Side-rail · footer: Ft2 Inline
+ * theme: Almanac · tone: utilitarian · anchor hue: 38 (brick) · enrichment: none
+ */
+:root {
+  --color-paper: oklch(97.5% 0.006 240);
+  --color-paper-2: oklch(94.5% 0.008 240);
+  --color-paper-3: oklch(91% 0.01 240);
+  --color-rule: oklch(86% 0.01 240);
+  --color-ink: oklch(24% 0.02 250);
+  --color-ink-2: oklch(40% 0.018 250);
+  --color-ink-3: oklch(50% 0.014 250);
+
+  --color-accent: oklch(52% 0.15 38);
+  --color-accent-hover: oklch(46% 0.15 38);
+  --color-accent-ink: oklch(98% 0.01 60);
+  --color-accent-wash: oklch(94% 0.03 45);
+
+  --color-ok: oklch(50% 0.12 150);
+  --color-warn: oklch(58% 0.13 75);
+  --color-error: oklch(50% 0.17 25);
+  --color-focus: oklch(52% 0.17 250);
+
+  --region-wall: oklch(62% 0.14 38);
+  --region-window: oklch(62% 0.14 230);
+  --region-door: oklch(62% 0.14 280);
+  --region-balcony: oklch(62% 0.14 150);
+  --region-pillar: oklch(62% 0.14 85);
+  --region-parapet: oklch(62% 0.14 330);
+  --region-gate: oklch(62% 0.14 190);
+  --region-roof_edge: oklch(62% 0.14 0);
+  --region-railing: oklch(62% 0.14 120);
+
+  --font-display: "Newsreader", ui-serif, Georgia, serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --rule-hair: 1px solid var(--color-rule);
+  --rule-thick: 2px solid var(--color-ink);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}
