@@ -88,7 +88,7 @@ def test_render_cache_and_cap(project_with_parts, monkeypatch, settings):
     designs.render(design)
     assert len(calls) == 2
 
-    design = designs.save(project_with_parts, design.id, "A", {"assignments": []})
+    design = designs.save(project_with_parts, design.id, "A", {"assignments": [{"target": "type:wall", "material_id": "elastomeric_paint"}]})
     with pytest.raises(AppError) as err:
         designs.render(design)
     assert err.value.status == 429
@@ -100,7 +100,7 @@ def test_failed_render_refunds_cap(project_with_parts, monkeypatch):
         raise ai.AiUnavailable()
 
     monkeypatch.setattr(ai, "render", boom)
-    design = designs.save(project_with_parts, None, "A", {"assignments": []})
+    design = designs.save(project_with_parts, None, "A", {"assignments": [{"target": "type:wall", "material_id": "texture_paint"}]})
     with pytest.raises(ai.AiUnavailable):
         designs.render(design)
     assert Project.objects.get(id=project_with_parts.id).render_count == 0
@@ -161,7 +161,16 @@ def test_render_refunds_on_any_exception(project_with_parts, monkeypatch):
         raise RuntimeError("x")
 
     monkeypatch.setattr(ai, "render", boom)
-    design = designs.save(project_with_parts, None, "A", {"assignments": []})
+    design = designs.save(project_with_parts, None, "A", {"assignments": [{"target": "type:wall", "material_id": "texture_paint"}]})
     with pytest.raises(RuntimeError):
         designs.render(design)
+    assert Project.objects.get(id=project_with_parts.id).render_count == 0
+
+
+def test_empty_design_cannot_render(project_with_parts, monkeypatch):
+    monkeypatch.setattr(ai, "render", lambda *a: pytest.fail("should not call AI"))
+    design = designs.save(project_with_parts, None, "Empty", {"assignments": []})
+    with pytest.raises(AppError) as err:
+        designs.render(design)
+    assert err.value.code == "EMPTY_DESIGN"
     assert Project.objects.get(id=project_with_parts.id).render_count == 0

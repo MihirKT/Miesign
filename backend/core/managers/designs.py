@@ -168,6 +168,8 @@ def save(project, design_id, name, spec):
 
 
 def render(design):
+    if not design.spec.get("assignments"):
+        raise AppError("EMPTY_DESIGN", "This design has no materials yet. Pick materials on step 03 first.")
     current_hash = spec_hash(design.spec)
     if design.render_file and design.render_spec_hash == current_hash:
         return design

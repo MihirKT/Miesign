@@ -81,7 +81,7 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
               onChange={(e) => { pick(e.target.files); e.target.value = '' }}
             />
             <strong>{busy ? `Checking your photo… ${elapsed}s` : 'Choose a photo or drop it here'}</strong>
-            <span className="lede">JPG, PNG or WEBP · at least 800 px on the short side · up to 15 MB</span>
+            <span className="lede">JPG, PNG or WEBP · at least 400 px on the short side · up to 15 MB</span>
           </label>
           <p className="sr-only" aria-live="polite">{status}</p>
           {error && <p className="notice error" role="alert">{error}</p>}

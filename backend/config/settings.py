@@ -55,7 +55,8 @@ RENDER_CAP = int(os.environ.get("RENDER_CAP", "8"))
 RATE_CACHE_DAYS = int(os.environ.get("RATE_CACHE_DAYS", "30"))
 # estimates retry the web search sooner than real web rates
 RATE_ESTIMATE_CACHE_HOURS = int(os.environ.get("RATE_ESTIMATE_CACHE_HOURS", "24"))
-MIN_PHOTO_SIDE = int(os.environ.get("MIN_PHOTO_SIDE", "800"))
+# Everyday WhatsApp/web-shared phone photos are often ~480 px wide; detection still works at that size.
+MIN_PHOTO_SIDE = int(os.environ.get("MIN_PHOTO_SIDE", "400"))
 # Variance of Pillow FIND_EDGES on a 512px greyscale thumbnail; tuned in Task 13.
 BLUR_MIN_VARIANCE = float(os.environ.get("BLUR_MIN_VARIANCE", "40"))
 MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(15 * 1024 * 1024)))

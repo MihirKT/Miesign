@@ -57,7 +57,7 @@ def upload(project, uploaded):
     ok = not issues
     if ok:
         verdict = ai.check_photo(jpeg, "image/jpeg")
-        ok = verdict["is_house_exterior"] and verdict["facade_visible"] and not verdict["issues"]
+        ok = verdict["is_house_exterior"] and verdict["facade_visible"]
         issues, tips = verdict["issues"], verdict["tips"]
         if not ok and not issues:
             issues = ["We could not see the front of a house clearly."]

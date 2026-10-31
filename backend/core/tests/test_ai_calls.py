@@ -116,3 +116,14 @@ def test_search_rates_prefers_grounding_uris(monkeypatch):
 def test_search_rates_filters_model_sources_to_http(monkeypatch):
     fake_client(monkeypatch, _rates_response('["https://ok.example", "junk", 5]', []))
     assert ai.search_rates("S", "C", ITEMS)[0]["sources"] == ["https://ok.example"]
+
+
+def test_detect_structure_accepts_bare_list(monkeypatch):
+    fake_client(monkeypatch, text_response('[{"type": "door", "box_2d": [500, 100, 1000, 200], "floor": 0}]'))
+    found = ai.detect_structure(b"img", "image/jpeg", 1000, 800)
+    assert [c["type"] for c in found] == ["door"]
+
+
+def test_detect_structure_accepts_box_key(monkeypatch):
+    fake_client(monkeypatch, text_response('[{"type": "pillar", "box": [500, 100, 1000, 200], "floor": 0}]'))
+    assert [c["type"] for c in ai.detect_structure(b"img", "image/jpeg", 1000, 800)] == ["pillar"]

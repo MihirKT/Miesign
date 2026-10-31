@@ -129,9 +129,13 @@ def check_photo(image_bytes, mime):
     prompt = (
         "You check photos for a house-exterior renovation tool. Reply with JSON only: "
         '{"is_house_exterior": bool, "facade_visible": bool, "issues": [string], "tips": [string]}. '
+        "Houses under construction, with bare plaster or unfinished walls, count as house exteriors. "
+        "A low or slightly angled phone shot is fine as long as most of the front is visible. "
         "facade_visible is true only if most of the front of one residential building is in frame "
-        "and not heavily blocked. issues and tips are short, plain English, at most 3 each; "
-        "tips tell the person how to retake the photo."
+        "and not heavily blocked. issues lists ONLY problems that make the photo unusable for planning "
+        "(not a house, front mostly hidden or cut off, far too dark or blurry); leave it empty otherwise. "
+        "Minor imperfections such as cloudy light, a gate, plants or wires go in tips, not issues. "
+        "issues and tips are short, plain English, at most 3 each; tips tell the person how to get a better photo."
     )
     data, _ = _json_call([_image_part(image_bytes, mime), prompt], temperature=0)
     return {
@@ -151,12 +155,15 @@ def detect_structure(image_bytes, mime, width, height):
         "Return one entry per visible wall face, window, door, balcony, pillar, parapet, gate, roof edge and railing. "
         "Ignore neighbouring buildings, vehicles, trees and people."
     )
-    data, _ = _json_call([_image_part(image_bytes, mime), prompt], temperature=0)
+    data, _ = _json_call([_image_part(image_bytes, mime), prompt], temperature=0, expect=(dict, list))
+    # Vision models often answer with the bare array of boxes instead of the wrapping object.
+    items = data if isinstance(data, list) else _list(data.get("components"))
     found = []
-    for c in _list(data.get("components")):
+    for c in items:
         if not isinstance(c, dict):
             continue
-        box = c.get("box_2d")
+        # Gemini names the field "box_2d" or "box" depending on the image; accept both.
+        box = c.get("box_2d") or c.get("box")
         if c.get("type") in COMPONENT_TYPES and isinstance(box, list) and len(box) == 4 and all(map(_number, box)):
             try:
                 floor = int(c.get("floor") or 0)
