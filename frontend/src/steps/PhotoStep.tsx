@@ -16,16 +16,22 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
   const [busy, setBusy] = useState(false)
   const [over, setOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState('')
   const elapsed = useElapsed(busy)
 
   async function upload(file: File) {
+    if (busy) return
     setBusy(true)
     setError(null)
+    setStatus('Checking your photo')
     try {
       const p = await ensureProject()
       onChange(await api.uploadPhoto(p.id, file))
+      setStatus('Photo checked')
     } catch (e) {
-      setError(errorMessage(e))
+      const m = errorMessage(e)
+      setError(m)
+      setStatus(m)
     } finally {
       setBusy(false)
     }
@@ -48,7 +54,7 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
 
   const pick = (files: FileList | null) => {
     const file = files?.[0]
-    if (file) void upload(file)
+    if (file && !busy) void upload(file)
   }
 
   return (
@@ -63,9 +69,9 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
           <label
             className="dropzone"
             data-over={over}
-            onDragOver={(e) => { e.preventDefault(); setOver(true) }}
+            onDragOver={(e) => { e.preventDefault(); if (!busy) setOver(true) }}
             onDragLeave={() => setOver(false)}
-            onDrop={(e) => { e.preventDefault(); setOver(false); pick(e.dataTransfer.files) }}
+            onDrop={(e) => { e.preventDefault(); setOver(false); if (!busy) pick(e.dataTransfer.files) }}
           >
             <input
               className="sr-only"
@@ -77,12 +83,13 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
             <strong>{busy ? `Checking your photo… ${elapsed}s` : 'Choose a photo or drop it here'}</strong>
             <span className="lede">JPG, PNG or WEBP · at least 800 px on the short side · up to 15 MB</span>
           </label>
+          <p className="sr-only" aria-live="polite">{status}</p>
           {error && <p className="notice error" role="alert">{error}</p>}
           {project && project.photos.length > 0 && (
             <ul className="thumbs" aria-label="Your photos">
-              {project.photos.map((ph) => (
+              {project.photos.map((ph, n) => (
                 <li key={ph.id} className="thumb" data-primary={ph.id === project.primaryPhotoId}>
-                  <img src={ph.url} alt="Uploaded photo of the house" />
+                  <img src={ph.url} alt={`Photo ${n + 1}`} />
                   {ph.qualityOk ? (
                     ph.id === project.primaryPhotoId ? (
                       <span className="badge web">In use</span>
@@ -92,7 +99,7 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
                   ) : (
                     <div className="notice error">
                       <strong>Can't use this one</strong>
-                      <ul>{[...ph.issues, ...ph.tips].map((t) => <li key={t}>{t}</li>)}</ul>
+                      <ul>{[...ph.issues, ...ph.tips].map((t, i) => <li key={`${i}-${t}`}>{t}</li>)}</ul>
                     </div>
                   )}
                 </li>

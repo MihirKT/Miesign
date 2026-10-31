@@ -21,7 +21,8 @@ export default function CitySelect({ states, state, city, onSave }: Props) {
   useEffect(() => {
     setS(state)
     setC(city)
-  }, [state, city])
+    setOtherChosen(city !== '' && !(states.find((x) => x.name === state)?.cities ?? []).some((x) => x.name === city))
+  }, [state, city, states])
 
   const cities = states.find((x) => x.name === s)?.cities ?? []
   const other = otherChosen || (c !== '' && !cities.some((x) => x.name === c))
@@ -43,7 +44,7 @@ export default function CitySelect({ states, state, city, onSave }: Props) {
     <div className="stack">
       <div className="field">
         <label htmlFor="state">State</label>
-        <select id="state" value={s} onChange={(e) => { setS(e.target.value); setC(''); setOtherChosen(false) }}>
+        <select id="state" value={s} onChange={(e) => { setS(e.target.value); setC(''); setOtherChosen(false); setMsg(null) }}>
           <option value="">Choose a state</option>
           {states.map((x) => <option key={x.name} value={x.name}>{x.name}</option>)}
         </select>
@@ -56,6 +57,7 @@ export default function CitySelect({ states, state, city, onSave }: Props) {
           disabled={!s}
           onChange={(e) => {
             const v = e.target.value
+            setMsg(null)
             setOtherChosen(v === OTHER)
             setC(v === OTHER ? '' : v)
           }}
@@ -68,13 +70,13 @@ export default function CitySelect({ states, state, city, onSave }: Props) {
       {other && (
         <div className="field">
           <label htmlFor="city-other">City name</label>
-          <input id="city-other" type="text" maxLength={80} value={c} onChange={(e) => setC(e.target.value)} />
+          <input id="city-other" type="text" maxLength={80} value={c} onChange={(e) => { setC(e.target.value); setMsg(null) }} />
         </div>
       )}
       <button type="button" className="btn" disabled={!s || !c.trim() || busy} aria-busy={busy} onClick={save}>
         {busy ? 'Saving…' : 'Save location'}
       </button>
-      {msg && <p className={`notice ${msg.kind}`} role="status">{msg.text}</p>}
+      <p className={msg ? `notice ${msg.kind}` : undefined} role="status" aria-live="polite">{msg?.text}</p>
     </div>
   )
 }
