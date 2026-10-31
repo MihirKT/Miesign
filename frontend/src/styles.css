@@ -111,6 +111,7 @@ textarea { min-height: 112px; resize: vertical; }
   text-transform: uppercase; color: var(--color-ink-3); white-space: nowrap;
 }
 .badge.web { color: var(--color-ok); }
+.plain-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .badge.override { color: var(--color-accent); }
 
 /* 01 photo */

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { api, errorMessage } from '../lib/api'
 import { typeLabel } from '../lib/format'
 import { useElapsed } from '../lib/hooks'
-import type { Answers, ComponentType, Design, DesignSpec, Material, Project } from '../lib/types'
+import type { Answers, Assignment, ComponentType, Design, DesignSpec, Material, Project } from '../lib/types'
 
 type Tab = 'describe' | 'guided' | 'manual'
 type Pick = { materialId: string; color: string | null }
@@ -49,7 +49,7 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
     [project.components],
   )
 
-  async function create(action: () => Promise<Design[]>, success: string) {
+  async function create(action: () => Promise<Design[]>, success: (created: Design[]) => string) {
     if (busy) return
     setBusy(true)
     setError(null)
@@ -59,7 +59,7 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
       const ids = new Set(created.map((d) => d.id))
       onChange({ ...project, designs: [...created, ...project.designs.filter((d) => !ids.has(d.id))] })
       onSelectDesign(created[0].id)
-      setDone(success)
+      setDone(success(created))
     } catch (e) {
       setError(errorMessage(e))
     } finally {
@@ -67,17 +67,42 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
     }
   }
 
+  const typeOf = (a: Assignment) => (a.target.startsWith('type:') ? a.target.slice(5) : null)
+  // Shown = the manual UI can represent it: a type:* target on a present type with a known, applicable material.
+  const isShown = (a: Assignment) => {
+    const t = typeOf(a)
+    const m = byId.get(a.materialId)
+    return t !== null && (present as string[]).includes(t) && !!m && m.appliesTo.includes(t as ComponentType)
+  }
+  const hiddenCount = editing ? editing.spec.assignments.filter((a) => !isShown(a)).length : 0
+
   function manualSpec(): DesignSpec {
-    const assignments = Object.entries(picks)
-      .filter(([, p]) => p?.materialId)
-      .map(([type, p]) => ({ target: `type:${type}`, materialId: p?.materialId ?? '', color: p?.color ?? null, finish: '' }))
-    return { style: '', palette: [], assignments, keepUnchanged: [] }
+    const fresh = (kept: Assignment[], old: Assignment[]) => [
+      ...kept,
+      ...(Object.entries(picks) as [ComponentType, Pick | undefined][])
+        .filter(([, p]) => p?.materialId)
+        .map(([type, p]) => ({
+          target: `type:${type}`,
+          materialId: p?.materialId ?? '',
+          color: p?.color ?? null,
+          finish: old.find((a) => a.target === `type:${type}` && a.materialId === p?.materialId)?.finish ?? '',
+        })),
+    ]
+    if (!editing) return { style: '', palette: [], assignments: fresh([], []), keepUnchanged: [] }
+    const { spec } = editing
+    const kept = spec.assignments.filter((a) => {
+      if (isShown(a)) return false
+      const t = typeOf(a)
+      // An unusable material on a shown type stays unless the user picks something for that type.
+      return !(t !== null && (present as string[]).includes(t) && picks[t as ComponentType])
+    })
+    return { ...spec, assignments: fresh(kept, spec.assignments) }
   }
 
   function startEdit(d: Design) {
     const next: Partial<Record<ComponentType, Pick>> = {}
     for (const a of d.spec.assignments) {
-      if (a.target.startsWith('type:')) next[a.target.slice(5) as ComponentType] = { materialId: a.materialId, color: a.color }
+      if (isShown(a)) next[a.target.slice(5) as ComponentType] = { materialId: a.materialId, color: a.color }
     }
     setPicks(next)
     setEditing(d)
@@ -98,14 +123,14 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
         <div className="stack">
           <div className="tabs" role="tablist" aria-label="Ways to design">
             {(['describe', 'guided', 'manual'] as const).map((t) => (
-              <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
+              <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} onClick={() => { setTab(t); setDone(null) }}>
                 {t === 'describe' ? 'Describe it' : t === 'guided' ? 'Help me choose' : 'Pick materials'}
               </button>
             ))}
           </div>
 
           {tab === 'describe' && (
-            <fieldset className="stack" role="tabpanel" disabled={busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <fieldset className="stack plain-fieldset" role="tabpanel" disabled={busy}>
               <div className="field">
                 <label htmlFor="design-text">What should the house look like?</label>
                 <textarea id="design-text" maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} />
@@ -114,14 +139,14 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                 {EXAMPLES.map((ex) => <button key={ex} type="button" className="chip" onClick={() => setText(ex)}>{ex.split(',')[0]}</button>)}
               </div>
               <button type="button" className="btn btn-primary" disabled={busy || text.trim().length < 3} aria-busy={busy}
-                onClick={() => create(() => api.designFromText(project.id, text), 'Design created.')}>
+                onClick={() => create(() => api.designFromText(project.id, text), () => 'Design created.')}>
                 {busy ? `Reading your request… ${elapsed}s` : 'Create design'}
               </button>
             </fieldset>
           )}
 
           {tab === 'guided' && (
-            <fieldset className="stack" role="tabpanel" disabled={busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <fieldset className="stack plain-fieldset" role="tabpanel" disabled={busy}>
               {(Object.keys(CHOICES) as (keyof typeof CHOICES)[]).map((key) => (
                 <div key={key} className="field" role="group" aria-labelledby={`q-${key}`}>
                   <span id={`q-${key}`} className="field-label">{typeLabel(key)}</span>
@@ -138,7 +163,7 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                 <input id="mood" type="text" maxLength={60} placeholder="warm earthy tones" value={answers.colorMood}
                   onChange={(e) => setAnswers((a) => ({ ...a, colorMood: e.target.value }))} />
               </div>
-              <div className="field" role="group" aria-labelledby="q-keep">
+              {present.length > 0 && <div className="field" role="group" aria-labelledby="q-keep">
                 <span id="q-keep" className="field-label">Leave these as they are</span>
                 <div className="chips">
                   {present.map((t) => (
@@ -149,17 +174,27 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                       }))}>{typeLabel(t)}</button>
                   ))}
                 </div>
-              </div>
+              </div>}
               <button type="button" className="btn btn-primary" disabled={busy} aria-busy={busy}
-                onClick={() => create(() => api.recommend(project.id, answers), '3 designs suggested.')}>
+                onClick={() => create(() => api.recommend(project.id, answers), (c) => `${c.length} design${c.length === 1 ? '' : 's'} suggested.`)}>
                 {busy ? `Putting options together… ${elapsed}s` : 'Suggest 3 designs'}
               </button>
             </fieldset>
           )}
 
           {tab === 'manual' && (
-            <fieldset className="stack" role="tabpanel" disabled={busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-              {editing && <p className="notice">Editing “{editing.name}”. Saving updates it.</p>}
+            <fieldset className="stack plain-fieldset" role="tabpanel" disabled={busy}>
+              {catalog.length === 0 && <p className="notice">Materials couldn't load. Reload the page.</p>}
+              {present.length === 0 && <p className="notice">No paintable parts yet. Go back to step 02.</p>}
+              {editing && (
+                <div className="notice">
+                  <p>Editing “{editing.name}”. Saving updates it.</p>
+                  {hiddenCount > 0 && (
+                    <p>{hiddenCount} item(s) from the original design (single-part materials or windows/doors) are kept as they are.</p>
+                  )}
+                  <button type="button" className="btn btn-small" onClick={() => { setEditing(null); setPicks({}) }}>Start a new design</button>
+                </div>
+              )}
               {present.map((t) => {
                 const options = catalog.filter((m) => m.appliesTo.includes(t))
                 const pick = picks[t]
@@ -171,7 +206,7 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                       <select id={`m-${t}`} value={pick?.materialId ?? ''} style={{ flex: '1 1 200px' }}
                         onChange={(e) => setPicks((p) => ({ ...p, [t]: { materialId: e.target.value, color: p[t]?.color ?? null } }))}>
                         <option value="">Leave as it is</option>
-                        {options.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        {options.map((m) => <option key={m.id} value={m.id}>{`${m.name} · ${m.durabilityYears} yrs · ${m.maintenance} upkeep`}</option>)}
                       </select>
                       <input type="color" aria-label={`${typeLabel(t)} colour`} disabled={!pick?.materialId}
                         value={pick?.color ?? DEFAULT_SWATCH}
@@ -182,12 +217,16 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                 )
               })}
               <button type="button" className="btn btn-primary" disabled={busy || manualSpec().assignments.length === 0} aria-busy={busy}
-                onClick={() => create(async () => [await api.saveDesign(project.id, { id: editing?.id, name: editing?.name ?? 'My design', spec: manualSpec() })], 'Design saved.')}>
+                onClick={() => create(async () => {
+                  const saved = await api.saveDesign(project.id, { id: editing?.id, name: editing?.name ?? 'My design', spec: manualSpec() })
+                  if (editing) setEditing(saved)
+                  return [saved]
+                }, () => 'Design saved.')}>
                 {editing ? 'Update design' : 'Save design'}
               </button>
             </fieldset>
           )}
-          {done && <p className="notice ok" role="status">{done}</p>}
+          <p role="status" aria-live="polite" className={done ? 'notice ok' : undefined}>{done}</p>
           {error && <p className="notice error" role="alert">{error}</p>}
         </div>
 
@@ -198,8 +237,9 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
           ) : (
             <div className="design-list">
               {project.designs.map((d) => (
-                <article key={d.id} className="design" data-active={d.id === activeDesignId}>
+                <article key={d.id} className="design" data-active={d.id === activeDesignId} aria-current={d.id === activeDesignId ? 'true' : undefined}>
                   <span className="badge">{MODE_LABEL[d.mode]}</span>
+                  {d.id === activeDesignId && <span className="badge web">In use</span>}
                   <h3>{d.name}</h3>
                   <p className="lede">{summary(d) || 'No materials applied.'}</p>
                   {d.rationale && <p>{d.rationale}</p>}
