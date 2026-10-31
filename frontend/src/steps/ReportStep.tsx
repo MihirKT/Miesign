@@ -27,7 +27,7 @@ export default function ReportStep({ project, design }: Props) {
         <p className="label">06 · Report</p>
         <h1 id="report-h">Take this to your contractor.</h1>
         <p className="lede">
-          The PDF has your original and redesigned photo, the materials for “{design.name}”, the measured areas, quantities and the full cost breakdown.
+          The PDF has {design.renderUrl ? 'your original and redesigned photo' : 'your photo (render a preview on step 04 to include the redesign)'}, the materials for “{design.name}”, the measured areas, quantities and the full cost breakdown.
         </p>
       </header>
       <div className="stack" style={{ maxWidth: '60ch' }}>

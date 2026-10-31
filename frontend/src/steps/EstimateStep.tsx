@@ -32,17 +32,20 @@ export default function EstimateStep({ project, design, onNext }: Props) {
   const saving = useRef(false)
   const total = useCountUp(estimate?.grandTotal ?? 0)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (announce = false): Promise<boolean> => {
     setError(null)
     try {
       // Estimate first: it triggers (and caches) the city rate search the rates call then reuses.
       const e = await api.estimate(design.id)
       setEstimate(e)
       setRates(await api.rates(project.state, project.city, project.id))
+      if (announce) setRateOk(`Rate updated. New total ${inr(e.grandTotal)}.`)
+      return true
     } catch (err) {
       setError(errorMessage(err))
       setEstimate(null)
       setRates([])
+      return false
     } finally {
       setLoading(false)
     }
@@ -54,14 +57,16 @@ export default function EstimateStep({ project, design, onNext }: Props) {
   }, [load])
 
   async function override(materialId: string, change: { materialRate?: number; laborRate?: number }) {
-    if (saving.current) throw new Error('Another rate is still saving.')
+    if (saving.current) {
+      setRateError('Wait for the last change to finish.')
+      throw new Error('Another rate is still saving.')
+    }
     saving.current = true
     setRateError(null)
     setRateOk('')
     try {
       await api.overrideRate(project.id, materialId, change)
-      await load()
-      setRateOk('Rate updated. Totals recalculated.')
+      await load(true)
     } catch (err) {
       setRateError(errorMessage(err))
       // Resync so the displayed total never disagrees with the server.
@@ -103,8 +108,8 @@ export default function EstimateStep({ project, design, onNext }: Props) {
                     <th scope="col">Item</th>
                     <th scope="col" className="num">Area / length</th>
                     <th scope="col" className="num">Quantity</th>
-                    <th scope="col" className="num">Material ₹</th>
-                    <th scope="col" className="num">Labour ₹</th>
+                    <th scope="col" className="num">Material ₹/unit</th>
+                    <th scope="col" className="num">Labour ₹/unit</th>
                     <th scope="col" className="num">Material</th>
                     <th scope="col" className="num">Labour</th>
                     <th scope="col" className="num">Total</th>
@@ -129,11 +134,11 @@ export default function EstimateStep({ project, design, onNext }: Props) {
                           <td className="num">{num(line.quantity)} {line.qtyUnit}</td>
                           <td className="num">
                             <RateCell value={line.materialRate} label={`${line.name} material rate per ${line.rateUnit}`}
-                              onCommit={(v) => override(line.materialId, { materialRate: v })} />
+                              onCommit={(v) => override(line.materialId, { materialRate: v })} onInvalid={setRateError} />
                           </td>
                           <td className="num">
                             <RateCell value={line.laborRate} label={`${line.name} labour rate per ${line.rateUnit}`}
-                              onCommit={(v) => override(line.materialId, { laborRate: v })} />
+                              onCommit={(v) => override(line.materialId, { laborRate: v })} onInvalid={setRateError} />
                           </td>
                           <td className="num">{inr(line.materialCost)}</td>
                           <td className="num">{inr(line.laborCost)}</td>
@@ -164,7 +169,7 @@ export default function EstimateStep({ project, design, onNext }: Props) {
           </details>
           <div className="total-bar">
             <span>Estimated total</span>
-            <span className="amount" aria-live="polite">{inr(total)}</span>
+            <span className="amount">{inr(total)}</span>
           </div>
           <button type="button" className="btn btn-primary" onClick={onNext}>Next: get the report</button>
         </div>
