@@ -1,0 +1,454 @@
+<title>Miesign Submission</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with wide tables and the evidence gallery breaking out to 1080px.
+   Tokens follow Miesign's own Almanac system: cool paper, ink, brick accent. */
+:root {
+  --paper: oklch(97.5% 0.006 240);
+  --paper-2: oklch(94.5% 0.008 240);
+  --rule: oklch(86% 0.01 240);
+  --ink: oklch(24% 0.02 250);
+  --ink-2: oklch(40% 0.018 250);
+  --ink-3: oklch(50% 0.014 250);
+  --accent: oklch(52% 0.15 38);
+  --accent-wash: oklch(94% 0.03 45);
+  --ok: oklch(50% 0.12 150);
+  --font-display: "Newsreader", ui-serif, Georgia, serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --measure: 68ch;
+  --wide: 1080px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: oklch(19% 0.012 250); --paper-2: oklch(24% 0.014 250); --rule: oklch(34% 0.014 250);
+    --ink: oklch(94% 0.008 240); --ink-2: oklch(80% 0.012 240); --ink-3: oklch(68% 0.012 240);
+    --accent: oklch(70% 0.13 40); --accent-wash: oklch(30% 0.05 40); --ok: oklch(74% 0.12 150);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: oklch(19% 0.012 250); --paper-2: oklch(24% 0.014 250); --rule: oklch(34% 0.014 250);
+  --ink: oklch(94% 0.008 240); --ink-2: oklch(80% 0.012 240); --ink-3: oklch(68% 0.012 240);
+  --accent: oklch(70% 0.13 40); --accent-wash: oklch(30% 0.05 40); --ok: oklch(74% 0.12 150);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.65 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 48px 72px;
+}
+.page { max-width: var(--wide); margin: 0 auto; display: grid; gap: 56px; }
+.col { max-width: var(--measure); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; font-style: normal; line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.15rem; }
+p, ul, ol { margin: 0; }
+a { color: var(--accent); }
+.label { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.lede { color: var(--ink-2); font-size: 1.1rem; max-width: var(--measure); }
+section { display: grid; gap: 18px; scroll-margin-top: 24px; }
+section > .col { display: grid; gap: 14px; }
+.prose { display: grid; gap: 12px; max-width: var(--measure); }
+.prose ul, .prose ol { padding-left: 1.2em; display: grid; gap: 6px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.9em; font-variant-numeric: tabular-nums; }
+
+/* masthead */
+.mast { display: grid; gap: 18px; border-bottom: 2px solid var(--ink); padding-bottom: 28px; }
+.mast .who { display: flex; flex-wrap: wrap; gap: 8px 24px; color: var(--ink-2); }
+.mast .who strong { color: var(--ink); font-weight: 600; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 0; border: 1px solid var(--rule); }
+.fact { padding: 14px 16px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); display: grid; gap: 2px; min-width: 0; }
+.fact b { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.fact span { color: var(--ink-2); font-size: 0.9rem; }
+
+/* contents */
+.toc ol { list-style: none; padding: 0; columns: 2 220px; column-gap: 32px; }
+.toc li { break-inside: avoid; padding: 4px 0; border-bottom: 1px solid var(--rule); display: flex; gap: 12px; }
+.toc li span { font-family: var(--font-mono); color: var(--ink-3); font-size: 0.85rem; min-width: 2ch; }
+.toc a { color: var(--ink); text-decoration: none; }
+.toc a:hover { color: var(--accent); }
+
+/* callouts */
+.note { background: var(--paper-2); border-left: 3px solid var(--accent); padding: 14px 16px; max-width: var(--measure); }
+.note.ok { border-left-color: var(--ok); }
+
+/* tables */
+.scroll { overflow-x: auto; border: 1px solid var(--rule); }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; background: var(--paper-2); white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td .ref { font-family: var(--font-mono); color: var(--accent); white-space: nowrap; }
+td small { color: var(--ink-3); display: block; font-family: var(--font-mono); font-size: 0.78rem; margin-top: 4px; }
+
+/* steps */
+.steps { list-style: none; padding: 0; display: grid; gap: 0; border-top: 2px solid var(--ink); }
+.steps li { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.steps .n { font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; padding-top: 4px; }
+.steps h3 { margin-bottom: 4px; }
+.steps p { color: var(--ink-2); }
+
+/* formulas */
+.formula { font-family: var(--font-mono); font-size: 0.9rem; background: var(--paper-2); padding: 12px 14px; overflow-x: auto; white-space: pre; max-width: var(--measure); }
+
+/* evidence */
+.cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 24px; }
+.case { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.pair figure { margin: 0; display: grid; gap: 4px; }
+.pair img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border: 1px solid var(--rule); display: block; }
+.pair figcaption { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.case dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 0; font-size: 0.9rem; }
+.case dt { color: var(--ink-3); }
+.case dd { margin: 0; }
+.chip { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: -0.1em; margin-right: 6px; border: 1px solid var(--rule); }
+
+/* diagrams */
+.diagram { border: 1px solid var(--rule); padding: 16px; overflow-x: auto; background: var(--paper); }
+pre.mermaid { margin: 0; background: transparent; }
+
+footer { border-top: 2px solid var(--ink); padding-top: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; color: var(--ink-2); font-size: 0.9rem; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) {
+  body { padding-block: 28px 48px; }
+  .steps li { grid-template-columns: 3rem minmax(0, 1fr); }
+}
+</style>
+
+<div class="page">
+
+  <header class="mast">
+    <p class="label">E2M Solutions · Associate AI Engineer · Assessment submission</p>
+    <h1>Miesign</h1>
+    <p class="lede">An AI pre-construction planner for Indian homeowners: upload one photo of the house front, choose colours and materials, see the house redesigned, and get material quantities and an itemised cost in rupees for your city.</p>
+    <div class="who">
+      <span>Designed and built by <strong>Mihir Kapildev Tiwari</strong></span>
+      <span>Submitted 31 Oct 2026</span>
+      <span>Brief: “AI-Based Exterior House Renovation &amp; Cost Estimation System”</span>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>6</b><span>guided steps, photo to PDF</span></div>
+      <div class="fact"><b>9</b><span>building part types detected</span></div>
+      <div class="fact"><b>12</b><span>catalog materials · 91 cities</span></div>
+      <div class="fact"><b>121</b><span>automated tests passing</span></div>
+      <div class="fact"><b>2–4°</b><span>hue error on real photos</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><span>1</span><a href="#access">Prototype and access</a></li>
+      <li><span>2</span><a href="#coverage">Requirements coverage</a></li>
+      <li><span>3</span><a href="#architecture">System architecture</a></li>
+      <li><span>4</span><a href="#workflow">User workflow</a></li>
+      <li><span>5</span><a href="#estimation">How the estimation works</a></li>
+      <li><span>6</span><a href="#ai">How the AI is used safely</a></li>
+      <li><span>7</span><a href="#results">Results on real photos</a></li>
+      <li><span>8</span><a href="#testing">Testing</a></li>
+      <li><span>9</span><a href="#limitations">Limitations</a></li>
+      <li><span>10</span><a href="#run">Run it locally</a></li>
+      <li><span>11</span><a href="#structure">Code structure</a></li>
+    </ol>
+  </nav>
+
+  <section id="access" aria-labelledby="h-access">
+    <p class="label">1 · Prototype and access</p>
+    <h2 id="h-access">Prototype and access</h2>
+    <div class="prose">
+      <div class="note"><strong>Live link:</strong> added here once deployment finishes (frontend on Cloudflare Pages, API on a Google Cloud e2-micro VM, AI on Vertex AI).</div>
+      <ul>
+        <li><strong>No login needed.</strong> Starting a project creates a private link (<code>?p=&lt;project id&gt;</code>). Anyone with that link can reopen and keep editing the project, which is how saving and re-editing work.</li>
+        <li><strong>Best on:</strong> any modern browser, phone or desktop. Layout is checked at 320, 375, 768 and 1440 px.</li>
+        <li><strong>Try it with:</strong> a straight-on daytime photo of a low-rise house front. Phone and WhatsApp-sized photos (from 400 px on the short side) are accepted.</li>
+        <li><strong>Previews:</strong> each project can render 8 redesigns. Re-rendering an unchanged design is free.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="coverage" aria-labelledby="h-coverage">
+    <p class="label">2 · Requirements coverage</p>
+    <h2 id="h-coverage">Every requirement in the brief, and where it lives</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Brief</th><th>Requirement</th><th>What Miesign does</th></tr></thead>
+        <tbody>
+          <tr><td class="ref">5.1</td><td>Media upload</td><td>Upload up to 5 photos. Each is rotated from EXIF, scaled to ≤ 2048 px, checked locally for size and blur, then checked by Gemini (“is this a house front, is it visible?”). Rejected photos show the reason and how to retake; accepted ones show tips. The first usable photo becomes the working photo.<small>managers/photos.py · steps/PhotoStep.tsx</small></td></tr>
+          <tr><td class="ref">5.2</td><td>Structure identification</td><td>Gemini detects walls, windows, doors, balconies, pillars, parapets, gates, roof edges and railings as boxes on the photo. The user reviews them on a canvas and can move a part, drag its corners, change its type, delete it or add a new one.<small>ai.detect_structure · managers/structure.py · RegionCanvas.tsx</small></td></tr>
+          <tr><td class="ref">5.3</td><td>Design and material selection</td><td>A 12-item catalog (paints, texture, stone cladding, tiles, ACP and WPC panels, glass / steel railings) with durability, upkeep, budget and climate fit. Three ways in: describe it in words, answer five questions for three suggestions, or pick a material and colour per part. Several designs per project; switch and edit freely.<small>data/catalog.json · managers/designs.py · steps/DesignStep.tsx</small></td></tr>
+          <tr><td class="ref">5.4</td><td>Renovation visualisation</td><td>The user’s own photo is edited by Gemini’s image model with strict “keep the structure” rules and a swatch card of the exact colours. Before/after slider plus a legend of what changed.<small>ai.render · steps/PreviewStep.tsx</small></td></tr>
+          <tr><td class="ref">5.5</td><td>Surface area estimation</td><td>Area from each part’s outline and a pixels-per-foot scale. Scale comes from one real measurement the user types, or from a standard 7 ft door / 4 ft window. Walls are net of windows and doors.<small>estimation.py</small></td></tr>
+          <tr><td class="ref">5.6</td><td>Material quantities</td><td>Litres of paint and kg of texture (coats ÷ coverage), number of tiles (tile size), square feet of cladding and panels, running feet of railing. Each includes the material’s wastage %.<small>estimation.quantity</small></td></tr>
+          <tr><td class="ref">5.7</td><td>Cost estimation</td><td>Material and labour cost per line, subtotal per category, grand total. Rates are looked up for the user’s city and every rate can be changed, with totals recalculating immediately.<small>managers/rates.py · steps/EstimateStep.tsx</small></td></tr>
+          <tr><td class="ref">5.8</td><td>Report</td><td>Downloadable PDF with the original and redesigned photo, selected materials and colours, quantities, the full cost table, assumptions and a disclaimer.<small>managers/report.py</small></td></tr>
+          <tr><td class="ref">6</td><td>Non-functional</td><td>Plain-language UI with one-tap colour presets for non-technical users; photos downscaled before upload; typical waits of 5 s (parts), 9 s (design), 10 s (render); projects saved server-side and reopened by link; independent projects for many users at once.</td></tr>
+          <tr><td class="ref">7–8</td><td>Assumptions and constraints</td><td>Low-rise residential, exterior only, advisory estimate. Needs only a photo: no drawings or measuring tools. One known height is optional.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="architecture" aria-labelledby="h-arch">
+    <p class="label">3 · System architecture</p>
+    <h2 id="h-arch">System architecture</h2>
+    <div class="prose">
+      <p>A React single-page app talks to a Django REST API. The API is layered so each part has one job: thin views handle HTTP, managers hold the business logic, the AI service only talks to Gemini, and a pure-Python estimation engine does every calculation. <strong>The language model never does arithmetic</strong>: it finds parts, reads requests and searches for rates, and all areas, quantities and money are computed in code that is unit-tested.</p>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  U["Homeowner<br/>React + Vite SPA"] -- "JSON over HTTPS" --> V["Django REST views<br/>18 endpoints"]
+  V --> M["Managers<br/>photos · parts · designs<br/>rates · estimate · PDF"]
+  M --> E["Estimation engine<br/>pure Python"]
+  M --> DB[("SQLite<br/>projects, parts, designs, rate cache")]
+  M --> FS["Media<br/>photos and renders"]
+  M --> AI["AI service ai.py"]
+  AI --> T["Gemini 3.5 Flash<br/>photo check · part detection<br/>design reading · rate search"]
+  AI --> I["Gemini 3.1 Flash Image<br/>redesign render"]
+  T -. "Google Search grounding" .-> W["Web rate sources"]
+</pre>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Layer</th><th>Technology</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>React 18, TypeScript, Vite, Konva</td><td>Six-step wizard, part editor canvas, before/after slider, editable cost table</td></tr>
+          <tr><td>API</td><td>Django 5, Django REST Framework</td><td>RPC-style endpoints, IDs in query params, one error shape <code>{"error": {code, message}}</code></td></tr>
+          <tr><td>Managers</td><td>Python</td><td>Validation, transactions, render cap, rate cache, soft deletes</td></tr>
+          <tr><td>Estimation</td><td>Pure Python</td><td>Geometry, scale, quantities, costs, subtotals</td></tr>
+          <tr><td>AI</td><td>Vertex AI, google-genai SDK</td><td>Schema-constrained JSON calls and image edits, retry once then a clear “AI unavailable” error</td></tr>
+          <tr><td>Storage</td><td>SQLite, local media</td><td>Projects, photos, parts, designs, city rate cache and rate overrides</td></tr>
+          <tr><td>PDF</td><td>ReportLab</td><td>Contractor-ready report with images and tables</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="workflow" aria-labelledby="h-flow">
+    <p class="label">4 · User workflow</p>
+    <h2 id="h-flow">User workflow</h2>
+    <ol class="steps">
+      <li><span class="n">01 Photo</span><div><h3>Upload a photo and say where the house is</h3><p>Miesign checks the photo and either accepts it with tips or explains what to retake. Choosing the state and city sets local rates.</p></div></li>
+      <li><span class="n">02 Parts</span><div><h3>Check the parts Miesign found</h3><p>Coloured outlines appear on the photo automatically. Fix anything by dragging, retyping, adding or deleting. Optionally enter one real height for more accurate areas.</p></div></li>
+      <li><span class="n">03 Design</span><div><h3>Choose colours and materials</h3><p>Describe it (“terracotta walls, cream parapet, black railing”), answer five questions for three costed options, or pick per part with one-tap colour presets.</p></div></li>
+      <li><span class="n">04 Preview</span><div><h3>See your own house redesigned</h3><p>Drag the slider between original and redesigned. A legend lists each change with its exact colour.</p></div></li>
+      <li><span class="n">05 Estimate</span><div><h3>See the cost, line by line</h3><p>Areas, quantities with wastage, material and labour cost, subtotals and the total in ₹. Change any rate your contractor quoted and the total updates.</p></div></li>
+      <li><span class="n">06 Report</span><div><h3>Take it to the contractor</h3><p>Download the PDF or copy the project link to keep working later.</p></div></li>
+    </ol>
+  </section>
+
+  <section id="estimation" aria-labelledby="h-est">
+    <p class="label">5 · How the estimation works</p>
+    <h2 id="h-est">How the estimation works</h2>
+    <div class="prose">
+      <h3>1. Scale: pixels to feet</h3>
+      <p>Every part is a four-corner outline in photo pixels. Miesign needs pixels per foot. If the user enters the real height of any part, that sets the scale. Otherwise it uses the average door height in the photo as 7 ft, or windows as 4 ft, or the photo height as a 20 ft two-storey front. Reports say which one was used.</p>
+      <h3>2. Areas and lengths</h3>
+    </div>
+    <div class="formula">area (sq ft)   = polygon area in px² ÷ (px per ft)²        shoelace formula
+wall (net)     = wall area − windows/doors whose centre lies inside
+pillar         = visible face × 4                            square column
+railing (rft)  = visible width ÷ px per ft</div>
+    <div class="prose">
+      <h3>3. Quantities, with wastage</h3>
+    </div>
+    <div class="formula">paint, texture  = area × coats ÷ coverage per unit × (1 + wastage)   → litres / kg
+tiles           = ⌈ area ÷ tile size × (1 + wastage) ⌉               → pieces
+cladding, panel = area × (1 + wastage)                               → sq ft
+railing         = length × (1 + wastage)                             → running ft</div>
+    <div class="prose">
+      <h3>4. Cost</h3>
+    </div>
+    <div class="formula">material cost = measure × (1 + wastage) × material rate
+labour cost   = measure × labour rate
+line total    = material + labour;   category subtotal = Σ lines;   grand total = Σ categories</div>
+    <div class="prose">
+      <h3>Worked example</h3>
+      <p>A 100 × 100 px wall with a 20 × 20 px window inside, plus a 10 × 100 px pillar, at a scale of 10 px per ft, painted with exterior emulsion (2 coats, 110 sq ft per litre, 5 % wastage) at ₹15 material + ₹10 labour per sq ft:</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Step</th><th>Working</th><th class="num">Result</th></tr></thead>
+        <tbody>
+          <tr><td>Wall</td><td>10,000 px² ÷ 10² − 400 px² ÷ 10²</td><td class="num">96.0 sq ft</td></tr>
+          <tr><td>Pillar</td><td>(1,000 px² ÷ 10²) × 4 faces</td><td class="num">40.0 sq ft</td></tr>
+          <tr><td>Paint quantity</td><td>136 × 2 ÷ 110 × 1.05</td><td class="num">2.6 L</td></tr>
+          <tr><td>Material</td><td>136 × 1.05 × ₹15</td><td class="num">₹2,142</td></tr>
+          <tr><td>Labour</td><td>136 × ₹10</td><td class="num">₹1,360</td></tr>
+          <tr><td><strong>Total</strong></td><td></td><td class="num"><strong>₹3,502</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <h3>5. Where the rates come from</h3>
+      <ol>
+        <li><strong>The user’s own rate</strong>, if they typed one (marked “Yours”).</li>
+        <li><strong>A recent web rate for the city</strong>, from Gemini with Google Search grounding, kept with its source links for 30 days (“Web · date”). A web rate is only accepted if it lies between 0.3× and 3× the catalog’s reference rate, which filters out nonsense results.</li>
+        <li><strong>A city-tier estimate</strong> when search fails or is out of range: reference rate × 1.2 (tier 1, e.g. Mumbai), 1.0 (tier 2) or 0.85 (tier 3). These are retried after 24 hours (“Estimate”).</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="ai" aria-labelledby="h-ai">
+    <p class="label">6 · How the AI is used safely</p>
+    <h2 id="h-ai">How the AI is used safely</h2>
+    <div class="prose"><p>Live testing showed model output can drift. In one case it answered a house photo with an unrelated car listing, so every call is fenced in.</p></div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Call</th><th>Model</th><th>Guardrails</th></tr></thead>
+        <tbody>
+          <tr><td>Photo check</td><td>gemini-3.5-flash</td><td>Only blocking problems reject a photo; minor ones become tips. Unfinished, bare-plaster houses are accepted.</td></tr>
+          <tr><td>Part detection</td><td>gemini-3.5-flash</td><td>Response schema allows only the 9 part types and 4-number boxes. Every house gets at least one wall; duplicate nested walls are removed. The user can correct everything.</td></tr>
+          <tr><td>Reading a request / suggestions</td><td>gemini-3.5-flash</td><td>Schema limits materials to the catalog and targets to parts that exist. Named colours map to Miesign presets; given hex codes are copied verbatim. The server re-validates and explains anything it drops.</td></tr>
+          <tr><td>City rate search</td><td>gemini-3.5-flash + Google Search</td><td>Source links kept; 0.3×–3× sanity bounds; city-tier fallback; cached.</td></tr>
+          <tr><td>Redesign render</td><td>gemini-3.1-flash-image</td><td>Hard rules (same camera, no added or moved windows, doors or pillars) plus a swatch-card image of the exact colours. Capped at 8 per project, refunded if a render fails, cached when the design hasn’t changed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note ok col">Every AI failure surfaces as one clear message (“The AI service did not respond. Try again in a minute.”) after one automatic retry, never as a crash.</div>
+  </section>
+
+  <section id="results" aria-labelledby="h-results">
+    <p class="label">7 · Results on real photos</p>
+    <h2 id="h-results">Results on real phone photos</h2>
+    <div class="prose"><p>Three ordinary photos of unfinished houses, each with a different request, run through the live pipeline with <code>scripts/requirement_check.py</code>. Colour accuracy is measured on the rendered walls: hue difference shows whether it is the right colour; lightness changes with the photo’s light, as real paint would.</p></div>
+    <div class="cases">
+      <article class="case">
+        <div class="pair">
+          <figure><img src="img/house1-before.jpg" alt="Unfinished three-storey plastered house, original photo"><figcaption>Original</figcaption></figure>
+          <figure><img src="img/house1-after.jpg" alt="Same house rendered with terracotta textured walls and black railings"><figcaption>Miesign</figcaption></figure>
+        </div>
+        <h3>Ludhiana · terracotta and black</h3>
+        <dl>
+          <dt>Request</dt><dd>“Warm terracotta texture paint on all the walls, cream on the parapet, black steel railing on the balcony.”</dd>
+          <dt>Parts</dt><dd>4 walls, balcony, door, gate, 2 windows</dd>
+          <dt>Colour</dt><dd><span class="chip" style="background:#C8553D"></span><span class="mono">#C8553D</span> · hue off 4°</dd>
+          <dt>Estimate</dt><dd class="mono">₹93,594</dd>
+        </dl>
+      </article>
+      <article class="case">
+        <div class="pair">
+          <figure><img src="img/house2-before.jpg" alt="Narrow plastered house with wooden gate, original photo"><figcaption>Original</figcaption></figure>
+          <figure><img src="img/house2-after.jpg" alt="Same house rendered with sage green walls and wood-look louvers"><figcaption>Miesign</figcaption></figure>
+        </div>
+        <h3>Ahmedabad · sage and wood</h3>
+        <dl>
+          <dt>Request</dt><dd>“Soft sage green exterior paint on the walls, wooden WPC louvers on the top balcony, stainless steel railing.”</dd>
+          <dt>Parts</dt><dd>2 walls, balcony, railing, gate, 4 windows</dd>
+          <dt>Colour</dt><dd><span class="chip" style="background:#9CAF88"></span><span class="mono">#9CAF88</span> · hue off 4°, lightness 70 vs 69</dd>
+          <dt>Estimate</dt><dd class="mono">₹66,598</dd>
+        </dl>
+      </article>
+      <article class="case">
+        <div class="pair">
+          <figure><img src="img/house3-before.jpg" alt="Two-storey plastered house with shutter, original photo"><figcaption>Original</figcaption></figure>
+          <figure><img src="img/house3-after.jpg" alt="Same house rendered with charcoal panels, white pillar and glass railing"><figcaption>Miesign</figcaption></figure>
+        </div>
+        <h3>Lucknow · charcoal and glass</h3>
+        <dl>
+          <dt>Request</dt><dd>“Modern look: charcoal grey ACP panels on the walls, white paint on the pillars, glass railing on the balcony.”</dd>
+          <dt>Parts</dt><dd>2 walls, pillar, 2 parapets, door, gate, 4 windows</dd>
+          <dt>Colour</dt><dd><span class="chip" style="background:#36454F"></span><span class="mono">#36454F</span> · hue off 2°</dd>
+          <dt>Estimate</dt><dd class="mono">₹1,56,985</dd>
+        </dl>
+      </article>
+    </div>
+    <div class="prose">
+      <p>Also checked: a sideways photo of a yard was correctly rejected with retake tips, and two freely licensed Wikimedia Commons houses (Kerala, Tamil Nadu) produced full estimates with web-sourced city rates.</p>
+    </div>
+  </section>
+
+  <section id="testing" aria-labelledby="h-testing">
+    <p class="label">8 · Testing</p>
+    <h2 id="h-testing">Testing</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Suite</th><th class="num">Tests</th><th>What it proves</th></tr></thead>
+        <tbody>
+          <tr><td>Backend unit and API (pytest)</td><td class="num">100</td><td>Geometry, quantities and costs to the rupee; rate priority, bounds and cache expiry; design validation; photo gate; render cap and refunds; AI output parsing with Gemini mocked; the full API flow from upload to PDF.</td></tr>
+          <tr><td>Frontend (Vitest)</td><td class="num">21</td><td>Snake/camel conversion, ₹ formatting, step unlocking, part geometry, cost grouping, API errors, colour presets.</td></tr>
+          <tr><td>Live AI checks</td><td class="num">8 photos</td><td><code>smoke_ai.py</code> and <code>requirement_check.py</code> run the real Vertex pipeline and measure render colour.</td></tr>
+          <tr><td>Browser walkthrough</td><td class="num">4 widths</td><td>Full flow on desktop and phone; no sideways scroll; 44 px touch targets; loading, empty, error and success states.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p><strong>Bugs found by live testing and fixed:</strong> over-strict photo rejection; an 800 px size limit that rejected WhatsApp photos; Gemini returning boxes under a different key or as unrelated JSON; walls occasionally missed; washed-out colours before the swatch card; an empty design using up a render.</p>
+    </div>
+  </section>
+
+  <section id="limitations" aria-labelledby="h-lim">
+    <p class="label">9 · Limitations</p>
+    <h2 id="h-lim">Limitations</h2>
+    <div class="prose">
+      <ul>
+        <li><strong>One visible facade.</strong> Sides and back of the house are not measured.</li>
+        <li><strong>No depth.</strong> A tilted or low-angle photo stretches areas; there is no 3D reconstruction. Entering one real height improves the scale but not perspective.</li>
+        <li><strong>Assumed scale</strong> when no measurement is given (7 ft door, 4 ft window, 20 ft front). Reports say so.</li>
+        <li><strong>Rectangular parts.</strong> Detection returns boxes, which can over-cover angled or irregular surfaces, and can miss or duplicate parts. Users can edit everything.</li>
+        <li><strong>Generative render.</strong> The image model can add or change small details (seen once: an extra railing). Colours match in hue within 2–4°, but keep about 70 % of the swatch’s saturation and follow the photo’s lighting.</li>
+        <li><strong>Rates are averages</strong> from web search within sanity bounds, not quotes. Estimates are advisory.</li>
+        <li><strong>No accounts.</strong> The project link gives full edit access; share it with care.</li>
+        <li><strong>Prototype scale.</strong> SQLite on one small VM, 8 renders per project, English and INR only.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="run" aria-labelledby="h-run">
+    <p class="label">10 · Run it locally</p>
+    <h2 id="h-run">Run it locally</h2>
+    <div class="formula">gcloud auth application-default login
+gcloud auth application-default set-quota-project &lt;your GCP project&gt;
+
+cd backend
+python -m venv .venv &amp;&amp; source .venv/Scripts/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver 127.0.0.1:8000
+
+cd frontend
+npm install
+npm run dev            # http://localhost:5173
+
+pytest -q              # backend tests (from backend/)
+npx vitest run         # frontend tests (from frontend/)</div>
+    <div class="prose"><p>Settings such as the GCP project, models, render cap and size limits are environment variables listed in <code>backend/.env.example</code>.</p></div>
+  </section>
+
+  <section id="structure" aria-labelledby="h-struct">
+    <p class="label">11 · Code structure</p>
+    <h2 id="h-struct">Code structure</h2>
+    <div class="formula">backend/
+  config/            settings, URLs
+  core/
+    ai.py            every Gemini call: schemas, prompts, swatch card, retries
+    estimation.py    geometry, scale, quantities, costs (pure, no I/O)
+    managers/        projects, photos, structure, designs, rates, estimates, report
+    views.py         thin HTTP layer for the 18 endpoints
+    data/            catalog.json (12 materials), cities.json (91 cities)
+    tests/           100 pytest tests
+  scripts/           smoke_ai.py, requirement_check.py (live checks)
+frontend/
+  src/lib/           API client, types, formatting, geometry, palette (tested)
+  src/components/    step rail, part canvas, compare slider, rate cell, city picker
+  src/steps/         the six screens
+  src/tokens.css     design tokens
+docs/                architecture, estimation, limitations, design direction</div>
+    <div class="prose"><p>Every source file carries a header naming its purpose and its author. Comments explain why a choice was made, not what the code does.</p></div>
+  </section>
+
+  <footer>
+    <span>Miesign · designed and built by Mihir Kapildev Tiwari</span>
+    <span>Estimates are advisory and not legally binding.</span>
+  </footer>
+</div>
