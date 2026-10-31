@@ -61,3 +61,58 @@ def test_render_returns_image_bytes(monkeypatch):
     part = SimpleNamespace(inline_data=SimpleNamespace(data=b"\x89PNG"))
     fake_client(monkeypatch, SimpleNamespace(candidates=[SimpleNamespace(content=SimpleNamespace(parts=[part]))]))
     assert ai.render(b"img", "image/jpeg", "prompt") == b"\x89PNG"
+
+
+def test_non_dict_json_is_unavailable(monkeypatch):
+    fake_client(monkeypatch, text_response("[1, 2]"))
+    with pytest.raises(ai.AiUnavailable):
+        ai.check_photo(b"img", "image/jpeg")
+
+
+def test_none_text_is_unavailable(monkeypatch):
+    fake_client(monkeypatch, text_response(None))
+    with pytest.raises(ai.AiUnavailable):
+        ai.check_photo(b"img", "image/jpeg")
+
+
+def test_check_photo_null_and_wrong_typed_lists(monkeypatch):
+    fake_client(monkeypatch, text_response('{"issues": null, "tips": "retake"}'))
+    out = ai.check_photo(b"img", "image/jpeg")
+    assert out["issues"] == [] and out["tips"] == []
+
+
+def test_detect_structure_skips_bad_items(monkeypatch):
+    fake_client(monkeypatch, text_response(
+        '{"components": ["junk", {"type": "wall", "box_2d": [0, 0, "x", 10]},'
+        ' {"type": "door", "box_2d": [0, 0, 500, 1000], "floor": "G", "confidence": "high"}]}'
+    ))
+    found = ai.detect_structure(b"img", "image/jpeg", 1000, 800)
+    assert len(found) == 1
+    assert found[0]["type"] == "door" and found[0]["floor"] == 0 and found[0]["confidence"] is None
+
+
+def test_render_content_none_is_unavailable(monkeypatch):
+    fake_client(monkeypatch, SimpleNamespace(candidates=[SimpleNamespace(content=None)]))
+    with pytest.raises(ai.AiUnavailable):
+        ai.render(b"img", "image/jpeg", "prompt")
+
+
+def _rates_response(sources, uris):
+    chunks = [SimpleNamespace(web=SimpleNamespace(uri=u)) for u in uris]
+    return SimpleNamespace(
+        text='{"rates": [{"material_id": "x", "material_rate": 1, "labor_rate": 2, "sources": %s}]}' % sources,
+        candidates=[SimpleNamespace(grounding_metadata=SimpleNamespace(grounding_chunks=chunks))],
+    )
+
+
+ITEMS = [{"id": "x", "name": "X", "rate_unit": "sqft"}]
+
+
+def test_search_rates_prefers_grounding_uris(monkeypatch):
+    fake_client(monkeypatch, _rates_response('["https://model.example"]', ["https://real.example"]))
+    assert ai.search_rates("S", "C", ITEMS)[0]["sources"] == ["https://real.example"]
+
+
+def test_search_rates_filters_model_sources_to_http(monkeypatch):
+    fake_client(monkeypatch, _rates_response('["https://ok.example", "junk", 5]', []))
+    assert ai.search_rates("S", "C", ITEMS)[0]["sources"] == ["https://ok.example"]

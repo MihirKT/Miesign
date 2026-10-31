@@ -91,20 +91,34 @@ def _generate(model, contents, config):
         except Exception as exc:  # SDK surfaces several error classes; retry once, then fail loudly
             last_error = exc
             logger.warning("Gemini call failed (attempt %s): %s", attempt + 1, exc)
-            time.sleep(RETRY_DELAY_SECONDS)
+            if attempt == 0:
+                time.sleep(RETRY_DELAY_SECONDS)
     raise AiUnavailable() from last_error
 
 
-def _json_call(contents, temperature=0.2, tools=None):
+def _list(value):
+    return value if isinstance(value, list) else []
+
+
+def _number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _json_call(contents, temperature=0.2, tools=None, expect=dict):
     config = types.GenerateContentConfig(temperature=temperature, tools=tools)
     if tools is None:
         config.response_mime_type = "application/json"
     response = _generate(settings.MODEL_TEXT, contents, config)
+    unreadable = AiUnavailable("The AI returned an unreadable answer. Try again.")
     try:
-        return extract_json(response.text), response
-    except ValueError as exc:
+        data = extract_json(response.text)
+    except (ValueError, TypeError) as exc:
         logger.warning("Unreadable Gemini JSON: %s", exc)
-        raise AiUnavailable("The AI returned an unreadable answer. Try again.") from exc
+        raise unreadable from exc
+    if not isinstance(data, expect):
+        logger.warning("Gemini JSON had wrong type: %s", type(data).__name__)
+        raise unreadable
+    return data, response
 
 
 def _image_part(image_bytes, mime):
@@ -123,8 +137,8 @@ def check_photo(image_bytes, mime):
     return {
         "is_house_exterior": bool(data.get("is_house_exterior")),
         "facade_visible": bool(data.get("facade_visible")),
-        "issues": [str(i) for i in data.get("issues", [])][:3],
-        "tips": [str(t) for t in data.get("tips", [])][:3],
+        "issues": [str(i) for i in _list(data.get("issues"))][:3],
+        "tips": [str(t) for t in _list(data.get("tips"))][:3],
     }
 
 
@@ -139,14 +153,21 @@ def detect_structure(image_bytes, mime, width, height):
     )
     data, _ = _json_call([_image_part(image_bytes, mime), prompt], temperature=0)
     found = []
-    for c in data.get("components", []):
+    for c in _list(data.get("components")):
+        if not isinstance(c, dict):
+            continue
         box = c.get("box_2d")
-        if c.get("type") in COMPONENT_TYPES and isinstance(box, list) and len(box) == 4:
+        if c.get("type") in COMPONENT_TYPES and isinstance(box, list) and len(box) == 4 and all(map(_number, box)):
+            try:
+                floor = int(c.get("floor") or 0)
+            except (ValueError, TypeError):
+                floor = 0
+            confidence = c.get("confidence")
             found.append({
                 "type": c["type"],
                 "quad": box_to_quad(box, width, height),
-                "floor": int(c.get("floor") or 0),
-                "confidence": c.get("confidence"),
+                "floor": floor,
+                "confidence": confidence if _number(confidence) else None,
             })
     return found
 
@@ -189,7 +210,7 @@ def recommend(answers, shortlist, present_types):
         "Use only listed material_id values and only present component types that each material applies to."
     )
     data, _ = _json_call([prompt], temperature=0.6)
-    return [d for d in data.get("designs", []) if isinstance(d, dict)][:3]
+    return [d for d in _list(data.get("designs")) if isinstance(d, dict)][:3]
 
 
 def _grounding_uris(response):
@@ -212,13 +233,14 @@ def search_rates(state, city, items):
     data, response = _json_call([prompt], temperature=0, tools=[types.Tool(google_search=types.GoogleSearch())])
     fallback_sources = _grounding_uris(response)
     rows = []
-    for r in data.get("rates", []) if isinstance(data, dict) else []:
+    for r in _list(data.get("rates")):
         if isinstance(r, dict):
+            own = [u for u in _list(r.get("sources")) if isinstance(u, str) and u.startswith("http")]
             rows.append({
                 "material_id": r.get("material_id"),
                 "material_rate": r.get("material_rate"),
                 "labor_rate": r.get("labor_rate"),
-                "sources": (r.get("sources") or fallback_sources)[:MAX_SOURCES],
+                "sources": (fallback_sources or own)[:MAX_SOURCES],
             })
     return rows
 
@@ -227,7 +249,8 @@ def render(image_bytes, mime, prompt):
     config = types.GenerateContentConfig(response_modalities=["IMAGE"])
     response = _generate(settings.MODEL_IMAGE, [_image_part(image_bytes, mime), prompt], config)
     for candidate in response.candidates or []:
-        for part in candidate.content.parts or []:
+        content = getattr(candidate, "content", None)
+        for part in getattr(content, "parts", None) or []:
             inline = getattr(part, "inline_data", None)
             if inline and inline.data:
                 return inline.data
