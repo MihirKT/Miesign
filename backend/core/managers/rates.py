@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import timedelta
 
 from django.conf import settings
@@ -26,14 +27,19 @@ def _within(value, base):
 
 
 def _validate_web(row, item):
+    raw = (row.get("material_rate"), row.get("labor_rate"))
+    if any(isinstance(v, bool) for v in raw):
+        return None
     try:
-        material_rate, labor_rate = float(row["material_rate"]), float(row["labor_rate"])
-    except (KeyError, TypeError, ValueError):
+        material_rate, labor_rate = float(raw[0]), float(raw[1])
+    except (TypeError, ValueError):
+        return None
+    if not (math.isfinite(material_rate) and math.isfinite(labor_rate)):
         return None
     if not (_within(material_rate, item["base_material_rate"]) and _within(labor_rate, item["base_labor_rate"])):
         return None
     return {"material_rate": round(material_rate), "labor_rate": round(labor_rate),
-            "source": "web", "sources": [str(s) for s in row.get("sources", [])]}
+            "source": "web", "sources": [s for s in row.get("sources") or [] if isinstance(s, str)]}
 
 
 def _fetch_and_cache(state, city, missing, tier, catalog):
@@ -44,7 +50,9 @@ def _fetch_and_cache(state, city, missing, tier, catalog):
         rows = []
     web = {}
     for row in rows:
-        item = catalog.get(row.get("material_id"))
+        if not isinstance(row, dict) or not isinstance(row.get("material_id"), str):
+            continue
+        item = catalog.get(row["material_id"])
         valid = _validate_web(row, item) if item else None
         if valid:
             web[item["id"]] = valid
@@ -62,8 +70,13 @@ def _fetch_and_cache(state, city, missing, tier, catalog):
 def get_rates(state, city, project_id=None):
     catalog = load_catalog()
     tier = city_tier(state, city)
-    fresh_after = timezone.now() - timedelta(days=settings.RATE_CACHE_DAYS)
-    cached = {r.material_id: r for r in RateCache.objects.filter(state=state, city=city, fetched_at__gte=fresh_after)}
+    now = timezone.now()
+    web_after = now - timedelta(days=settings.RATE_CACHE_DAYS)
+    estimate_after = now - timedelta(hours=settings.RATE_ESTIMATE_CACHE_HOURS)
+    cached = {
+        r.material_id: r for r in RateCache.objects.filter(state=state, city=city)
+        if r.fetched_at >= (web_after if r.source == "web" else estimate_after)
+    }
     missing = [item for mid, item in catalog.items() if mid not in cached]
     if missing and city:
         cached.update(_fetch_and_cache(state, city, missing, tier, catalog))
@@ -94,8 +107,12 @@ def get_rates(state, city, project_id=None):
 def set_override(project_id, material_id, material_rate, labor_rate):
     if material_id not in load_catalog():
         raise AppError("UNKNOWN_MATERIAL", f"Material '{material_id}' is not in the catalog.")
+    if material_rate is None and labor_rate is None:
+        raise AppError("INVALID_RATE", "Give a material rate, a labour rate, or both.")
     for value in (material_rate, labor_rate):
-        if value is not None and (not isinstance(value, (int, float)) or value <= 0):
+        if value is not None and (
+            isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0
+        ):
             raise AppError("INVALID_RATE", "Rates must be positive numbers.")
     RateOverride.all_objects.update_or_create(
         project_id=project_id, material_id=material_id,

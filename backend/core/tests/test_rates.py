@@ -81,3 +81,50 @@ def test_override_validation():
         rates.set_override(uuid.uuid4(), "nope", 10, 10)
     with pytest.raises(AppError):
         rates.set_override(uuid.uuid4(), PAINT, -5, None)
+
+
+@pytest.mark.django_db
+def test_estimated_rows_expire_after_estimate_window(monkeypatch):
+    calls = []
+
+    def boom(*args):
+        calls.append(1)
+        raise ai.AiUnavailable()
+
+    monkeypatch.setattr(ai, "search_rates", boom)
+    rates.get_rates("Kerala", "Thrissur")
+    rates.get_rates("Kerala", "Thrissur")
+    assert calls == [1]  # estimates cached
+    RateCache.objects.update(fetched_at=timezone.now() - timedelta(hours=25))
+    rates.get_rates("Kerala", "Thrissur")
+    assert calls == [1, 1]
+
+
+@pytest.mark.django_db
+def test_web_rows_25_hours_old_still_cached(monkeypatch):
+    calls = []
+    monkeypatch.setattr(ai, "search_rates", lambda s, c, items: calls.append(1) or web_rows(20, 11))
+    rates.get_rates("Maharashtra", "Pune")
+    RateCache.objects.filter(source="web").update(fetched_at=timezone.now() - timedelta(hours=25))
+    result = rates.get_rates("Maharashtra", "Pune")
+    assert calls == [1]
+    assert result[PAINT]["source"] == "web"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("args", [(True, None), (None, True), (float("nan"), None), (None, float("inf")), (None, None)])
+def test_set_override_rejects_bad_values(args):
+    with pytest.raises(AppError):
+        rates.set_override(uuid.uuid4(), PAINT, *args)
+
+
+@pytest.mark.django_db
+def test_malformed_ai_rows_do_not_raise(monkeypatch):
+    good = {"material_id": PAINT, "material_rate": True, "labor_rate": 11, "sources": None}
+    rows = ["junk", {"material_id": 123, "material_rate": 5, "labor_rate": 5}, good,
+            {"material_id": "acp_panel", "material_rate": 70, "labor_rate": 70, "sources": None}]
+    monkeypatch.setattr(ai, "search_rates", lambda s, c, items: rows)
+    result = rates.get_rates("Maharashtra", "Pune")
+    assert result[PAINT]["source"] == "estimated"  # bool rate invalid
+    assert result["acp_panel"]["source"] == "web"  # sources=None tolerated
+    assert result["acp_panel"]["sources"] == []

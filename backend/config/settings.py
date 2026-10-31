@@ -53,6 +53,8 @@ MODEL_IMAGE = os.environ.get("MODEL_IMAGE", "gemini-3.1-flash-image")
 
 RENDER_CAP = int(os.environ.get("RENDER_CAP", "8"))
 RATE_CACHE_DAYS = int(os.environ.get("RATE_CACHE_DAYS", "30"))
+# estimates retry the web search sooner than real web rates
+RATE_ESTIMATE_CACHE_HOURS = int(os.environ.get("RATE_ESTIMATE_CACHE_HOURS", "24"))
 MIN_PHOTO_SIDE = int(os.environ.get("MIN_PHOTO_SIDE", "800"))
 # Variance of Pillow FIND_EDGES on a 512px greyscale thumbnail; tuned in Task 13.
 BLUR_MIN_VARIANCE = float(os.environ.get("BLUR_MIN_VARIANCE", "40"))
