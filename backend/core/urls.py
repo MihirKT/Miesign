@@ -21,6 +21,7 @@ urlpatterns = [
     path("rates", views.rates_get),
     path("rates/override", views.rates_override),
     path("design/from-text", views.design_from_text),
+    path("design/enhance", views.design_enhance),
     path("design/recommend", views.design_recommend),
     path("design/save", views.design_save),
     path("design/render", views.design_render),

@@ -58,3 +58,13 @@ def test_swatch_card_has_one_tile_per_coloured_assignment():
     assert card.getpixel((SWATCH_GAP + 50, SWATCH_GAP + 50)) == (0xC8, 0x55, 0x3D)
     assert card.width > 2 * 200
     assert build_swatch_card({"assignments": [{"target": "type:wall", "material_id": "x", "color": None}]}) is None
+
+
+def test_palette_matches_frontend():
+    import re
+    from pathlib import Path
+
+    from core.ai import PAINT_PRESETS
+    ts = (Path(__file__).resolve().parents[3] / "frontend/src/lib/palette.ts").read_text(encoding="utf-8")
+    frontend = {n.lower(): h for n, h in re.findall(r"name: '([^']+)', hex: '(#[0-9A-F]{6})'", ts)}
+    assert frontend == PAINT_PRESETS

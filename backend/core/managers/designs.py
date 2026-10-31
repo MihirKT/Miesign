@@ -15,7 +15,7 @@ from django.db.models import F
 from core import ai
 from core.catalog import load_catalog
 from core.errors import AppError
-from core.estimation import COMPONENT_TYPES
+from core.estimation import COMPONENT_TYPES, OPENING_TYPES
 from core.managers.projects import parse_id, primary_photo, read_bytes
 from core.managers.structure import component_dicts
 from core.models import Design, Project
@@ -28,7 +28,8 @@ MAX_DESIGNS_PER_REQUEST = 3
 ANSWER_CHOICES = {
     "budget": {"low", "mid", "high"},
     "climate": {"coastal", "heavy_rain", "hot_dry", "moderate"},
-    "style": {"modern", "traditional", "minimal", "luxe"},
+    "style": {"modern", "contemporary", "minimal", "traditional", "kerala", "rajasthani", "colonial", "mediterranean",
+              "scandinavian", "japandi", "industrial", "farmhouse", "art_deco", "luxe"},
     "maintenance": {"low", "medium"},
 }
 EXCLUDED_BUDGETS = {"low": {"high"}, "mid": set(), "high": set()}
@@ -146,6 +147,18 @@ def from_text(project, text):
     notes = [n[:200] for n in _as_list(raw.get("notes")) if isinstance(n, str)][:5]
     return Design.objects.create(project_id=project.id, name=_name_from_request(text), mode="free_text",
                                  input={"text": text}, spec=spec, warnings=notes + warnings)
+
+
+def enhance(project, text):
+    text = str(text or "").strip()
+    if not MIN_TEXT <= len(text) <= MAX_TEXT:
+        raise AppError("INVALID_TEXT", f"Type at least {MIN_TEXT} characters to enhance.")
+    # Windows and doors are openings that are never priced, so the brief must not restyle them.
+    types = [t for t in _present_types(component_dicts(project)) if t not in OPENING_TYPES]
+    enhanced = ai.enhance_text(text, types, load_catalog())
+    if not isinstance(enhanced, str) or len(enhanced.strip()) < MIN_TEXT:
+        raise ai.AiUnavailable("The AI could not improve that idea. Try again.")
+    return enhanced.strip()[:MAX_TEXT]
 
 
 def recommend(project, answers):

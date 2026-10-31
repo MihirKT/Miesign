@@ -261,10 +261,22 @@ def _spec_schema(material_ids, present_types):
     }
 
 
-# Mirrors frontend/src/lib/palette.ts so a colour named in words matches the one-tap swatch.
+# Mirrors SHADE_FAMILIES in frontend/src/lib/palette.ts (test_palette_matches_frontend checks) so a colour named
+# in words matches the one-tap swatch.
 PAINT_PRESETS = {
-    "off-white": "#F3EFE6", "cream": "#F3E9DC", "sandstone": "#D8C3A5", "terracotta": "#C8553D",
-    "sage green": "#9CAF88", "sky grey": "#A7B4BE", "charcoal": "#36454F", "deep teal": "#2F5D62",
+    "off-white": "#F3EFE6", "cream": "#F3E9DC", "ivory": "#F6F1E1", "pearl white": "#F8F6F0",
+    "linen": "#EDE4D3", "magnolia": "#F2E8D7", "sandstone": "#D8C3A5", "biscuit": "#E3CBA5",
+    "desert sand": "#E1C699", "khaki": "#C3B091", "mushroom": "#BBA99A", "taupe": "#A89A8A",
+    "lemon chiffon": "#F2E6A7", "butter yellow": "#F3DD8C", "honey": "#E3B35B", "turmeric": "#E0A526",
+    "mustard": "#D4A33B", "ochre": "#C68A2E", "peach": "#F2C1A0", "coral": "#E07A5F",
+    "burnt orange": "#CC6A2C", "terracotta": "#C8553D", "rust": "#A8502E", "brick red": "#9C3B2E",
+    "maroon": "#6E2A2A", "blush pink": "#E8C4C0", "salmon": "#E59A84", "dusty rose": "#C4918A",
+    "lavender": "#C6B8D6", "mauve": "#9C7F94", "mint": "#BFD8C2", "pistachio": "#C2D3A0",
+    "sage green": "#9CAF88", "olive": "#7A7A45", "moss": "#66784A", "forest green": "#2F4F3A",
+    "powder blue": "#B7CCDA", "aqua": "#8CC7C1", "sky blue": "#8FB8D8", "teal blue": "#3E7C8C",
+    "deep teal": "#2F5D62", "denim": "#4F6D8A", "navy": "#24344D", "light grey": "#C9C9C6",
+    "sky grey": "#A7B4BE", "dove grey": "#A9A8A4", "slate grey": "#6B7378", "charcoal": "#36454F",
+    "graphite": "#3A3A3C", "walnut": "#6B4A35", "chocolate brown": "#4E3428", "jet black": "#1E1E1E",
 }
 COLOUR_RULES = (
     "Colours: every paint, texture or panel assignment gets a color as an exact #RRGGBB. "
@@ -288,6 +300,26 @@ def parse_text(text, present_types, catalog):
     )
     data, _ = _json_call([prompt], schema=_spec_schema(catalog.keys(), present_types))
     return data
+
+
+ENHANCE_SCHEMA = {"type": "OBJECT", "properties": {"text": {"type": "STRING"}}, "required": ["text"]}
+
+
+def enhance_text(text, present_types, catalog):
+    """Rewrite a rough idea into a specific brief that parse_text can turn into a design without guessing."""
+    prompt = (
+        "A homeowner typed a rough idea for their house exterior. Rewrite it as one clear design brief of at most "
+        "600 characters, in plain English, written as their own request. Keep every colour, material and part they "
+        "mentioned. For each component present that they left out, add one fitting choice in the same style. "
+        "Never restyle windows or doors. "
+        f"Components present: {present_types}. Use only materials from this catalog, by name: "
+        f"{json.dumps([m['name'] for m in catalog.values()])}. Name colours using these shade names where one fits: "
+        f"{json.dumps(list(PAINT_PRESETS))}. Do not add prices, measurements or anything not visible on a house front. "
+        'Reply with JSON only: {"text": string}.\n'
+        f"Idea: {text}"
+    )
+    data, _ = _json_call([prompt], temperature=0.6, schema=ENHANCE_SCHEMA)
+    return data.get("text")
 
 
 def recommend(answers, shortlist, present_types):

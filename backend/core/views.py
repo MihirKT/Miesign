@@ -120,6 +120,11 @@ def design_from_text(request):
 
 
 @api_view(["POST"])
+def design_enhance(request):
+    return Response({"text": designs.enhance(_project(request), _body(request).get("text"))})
+
+
+@api_view(["POST"])
 def design_recommend(request):
     created = designs.recommend(_project(request), _body(request))
     return Response({"designs": [design_dict(request, d) for d in created]})

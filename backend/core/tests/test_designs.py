@@ -185,3 +185,28 @@ def test_free_text_design_is_named_from_the_request():
     assert designs._name_from_request("Sage green walls. Steel railing.") == "Sage green walls"
     long_name = designs._name_from_request("Warm terracotta texture paint on all the walls, cream parapet")
     assert len(long_name) <= designs.DESIGN_NAME_LENGTH and long_name.endswith("…")
+
+
+def test_enhance_returns_trimmed_ai_text(project_with_parts, monkeypatch):
+    seen = {}
+
+    def fake(text, types, catalog):
+        seen.update(text=text, types=types)
+        return "  Terracotta walls, cream parapet.  "
+    monkeypatch.setattr(ai, "enhance_text", fake)
+    assert designs.enhance(project_with_parts, " red walls ") == "Terracotta walls, cream parapet."
+    assert seen["text"] == "red walls" and "wall" in seen["types"]
+
+
+def test_enhance_validates_input_and_ai_output(project_with_parts, monkeypatch):
+    monkeypatch.setattr(ai, "enhance_text", lambda *a: pytest.fail("should not call AI"))
+    with pytest.raises(AppError):
+        designs.enhance(project_with_parts, "hi")
+    monkeypatch.setattr(ai, "enhance_text", lambda *a: None)
+    with pytest.raises(ai.AiUnavailable):
+        designs.enhance(project_with_parts, "red walls")
+
+
+def test_new_styles_are_accepted():
+    for style in ("kerala", "japandi", "art_deco"):
+        assert designs.validate_answers({**ANSWERS, "style": style})["style"] == style
