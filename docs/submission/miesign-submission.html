@@ -166,7 +166,7 @@ footer { border-top: 2px solid var(--ink); padding-top: 18px; display: flex; fle
     <p class="label">1 · Prototype and access</p>
     <h2 id="h-access">Prototype and access</h2>
     <div class="prose">
-      <div class="note"><strong>Live link:</strong> <a href="https://136-112-204-89.sslip.io/">https://136-112-204-89.sslip.io</a> · <strong>Code:</strong> <a href="https://github.com/MihirKT/Miesign">github.com/MihirKT/Miesign</a><br>Hosted on one Google Cloud e2-micro server (free tier): Caddy serves the React app over HTTPS and passes <code>/api</code> to Django under gunicorn. Gemini on Vertex AI signs in with the server's own service account, so no keys are stored anywhere.</div>
+      <div class="note"><strong>Live link:</strong> <a href="https://miesign.pages.dev/">https://miesign.pages.dev</a> · <strong>Code:</strong> <a href="https://github.com/MihirKT/Miesign">github.com/MihirKT/Miesign</a><br>The React app is on Cloudflare Pages; a Pages Function forwards <code>/api</code> to one Google Cloud e2-micro server (free tier), where Caddy terminates HTTPS in front of Django under gunicorn. Gemini on Vertex AI signs in with the server's own service account, so no keys are stored anywhere.</div>
       <ul>
         <li><strong>No login needed.</strong> Starting a project creates a private link (<code>?p=&lt;project id&gt;</code>). Anyone with that link can reopen and keep editing the project, which is how saving and re-editing work.</li>
         <li><strong>Best on:</strong> any modern browser, phone or desktop. Layout is checked at 320, 375, 768 and 1440 px.</li>
