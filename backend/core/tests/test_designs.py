@@ -174,3 +174,9 @@ def test_empty_design_cannot_render(project_with_parts, monkeypatch):
         designs.render(design)
     assert err.value.code == "EMPTY_DESIGN"
     assert Project.objects.get(id=project_with_parts.id).render_count == 0
+
+
+def test_free_text_design_is_named_from_the_request():
+    assert designs._name_from_request("Sage green walls. Steel railing.") == "Sage green walls"
+    long_name = designs._name_from_request("Warm terracotta texture paint on all the walls, cream parapet")
+    assert len(long_name) <= designs.DESIGN_NAME_LENGTH and long_name.endswith("…")

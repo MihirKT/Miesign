@@ -242,7 +242,7 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
         <aside className="panel">
           <h2>Your designs</h2>
           {project.designs.length === 0 ? (
-            <p className="notice">No designs yet. Create one on the left.</p>
+            <p className="notice">No designs yet. Describe one, ask for suggestions, or pick materials to create your first.</p>
           ) : (
             <div className="design-list">
               {project.designs.map((d) => (

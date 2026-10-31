@@ -175,3 +175,25 @@ def test_set_scale_rejects_other_photo_component_and_bool(monkeypatch):
     with pytest.raises(AppError) as err:
         structure.set_scale(project, component_id=str(own.id), real_height_ft=True)
     assert err.value.code == "INVALID_SCALE"
+
+
+def test_ensure_wall_adds_facade_wall_when_missing():
+    found = [
+        {"type": "window", "quad": [[10, 20], [30, 20], [30, 40], [10, 40]], "floor": 0, "confidence": 0.9},
+        {"type": "railing", "quad": [[50, 5], [90, 5], [90, 15], [50, 15]], "floor": 1, "confidence": 0.8},
+    ]
+    result = structure.ensure_wall(found)
+    assert result[0]["type"] == "wall"
+    assert result[0]["quad"] == [[10, 5], [90, 5], [90, 40], [10, 40]]
+    assert structure.ensure_wall(result) == result
+    assert structure.ensure_wall([]) == []
+
+
+def test_drop_nested_walls_keeps_the_outer_wall():
+    outer = {"type": "wall", "quad": [[0, 0], [100, 0], [100, 100], [0, 100]], "floor": 0, "confidence": None}
+    inner = {"type": "wall", "quad": [[10, 10], [60, 10], [60, 60], [10, 60]], "floor": 0, "confidence": None}
+    side = {"type": "wall", "quad": [[90, 0], [200, 0], [200, 100], [90, 100]], "floor": 0, "confidence": None}
+    window = {"type": "window", "quad": [[20, 20], [30, 20], [30, 30], [20, 30]], "floor": 0, "confidence": None}
+    result = structure.drop_nested_walls([inner, window, outer, side])
+    assert inner not in result
+    assert outer in result and side in result and window in result

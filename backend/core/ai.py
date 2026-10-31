@@ -179,6 +179,8 @@ def detect_structure(image_bytes, mime, width, height):
         '{"components": [{"type": string, "box_2d": [ymin, xmin, ymax, xmax], "floor": int, "confidence": number}]}. '
         "box_2d is normalised 0-1000. floor is 0 for ground floor, 1 for the first floor, and so on. "
         "Return one entry per visible wall face, window, door, balcony, pillar, parapet, gate, roof edge and railing. "
+        "Every house has wall faces: always include the main plastered or painted wall areas as type wall, "
+        "one box per floor or per flat wall plane. "
         "Ignore neighbouring buildings, vehicles, trees and people."
     )
     data, _ = _json_call([prompt, _image_part(image_bytes, mime)], temperature=0, expect=(dict, list),
@@ -246,11 +248,16 @@ def _spec_schema(material_ids, present_types):
     }
 
 
+# Mirrors frontend/src/lib/palette.ts so a colour named in words matches the one-tap swatch.
+PAINT_PRESETS = {
+    "off-white": "#F3EFE6", "cream": "#F3E9DC", "sandstone": "#D8C3A5", "terracotta": "#C8553D",
+    "sage green": "#9CAF88", "sky grey": "#A7B4BE", "charcoal": "#36454F", "deep teal": "#2F5D62",
+}
 COLOUR_RULES = (
     "Colours: every paint, texture or panel assignment gets a color as an exact #RRGGBB. "
-    "If the homeowner gives a hex code, copy it verbatim; if they name a colour (e.g. terracotta, sage green, "
-    "off-white), choose the standard hex for that name. Use null only for materials whose look is fixed "
-    "(natural stone, glass, steel, wood-look). "
+    "If the homeowner gives a hex code, copy it verbatim. If they name one of these Miesign colours, use its hex "
+    f"exactly: {json.dumps(PAINT_PRESETS)}. For any other named colour choose its standard hex. "
+    "Use null only for materials whose look is fixed (natural stone, glass, steel, wood-look). "
 )
 
 

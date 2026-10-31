@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from core import ai
 from core.errors import AppError
-from core.estimation import COMPONENT_TYPES, default_scale, scale_from_component
+from core.estimation import COMPONENT_TYPES, bbox, default_scale, scale_from_component
 from core.managers.projects import parse_id, primary_photo, read_bytes
 from core.models import Component
 
@@ -25,9 +25,52 @@ def _refresh_default_scale(project, photo):
         project.save(update_fields=["px_per_ft", "updated_at"])
 
 
+NESTED_WALL_RATIO = 0.8  # a wall this much inside a bigger wall is a duplicate detection
+
+
+def _box_area(quad):
+    x0, y0, x1, y1 = bbox(quad)
+    return max(x1 - x0, 0) * max(y1 - y0, 0)
+
+
+def _overlap_area(a, b):
+    ax0, ay0, ax1, ay1 = bbox(a)
+    bx0, by0, bx1, by1 = bbox(b)
+    return max(min(ax1, bx1) - max(ax0, bx0), 0) * max(min(ay1, by1) - max(ay0, by0), 0)
+
+
+def drop_nested_walls(found):
+    """Remove wall boxes that sit mostly inside a larger wall, so their area isn't priced twice."""
+    walls = sorted((c for c in found if c["type"] == "wall"), key=lambda c: _box_area(c["quad"]), reverse=True)
+    kept = []
+    for wall in walls:
+        area = _box_area(wall["quad"])
+        if area and any(_overlap_area(wall["quad"], k["quad"]) / area > NESTED_WALL_RATIO for k in kept):
+            continue
+        kept.append(wall)
+    return [c for c in found if c["type"] != "wall" or c in kept]
+
+
+def ensure_wall(found):
+    """Guarantee at least one wall so a facade is always priceable.
+
+    Detection is not deterministic and occasionally returns only windows/railings. The
+    fallback wall covers the area spanned by everything that was found; the user can
+    adjust it on the Parts step like any other region.
+    """
+    if not found or any(c["type"] == "wall" for c in found):
+        return found
+    x0 = min(p[0] for c in found for p in c["quad"])
+    y0 = min(p[1] for c in found for p in c["quad"])
+    x1 = max(p[0] for c in found for p in c["quad"])
+    y1 = max(p[1] for c in found for p in c["quad"])
+    wall = {"type": "wall", "quad": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], "floor": 0, "confidence": None}
+    return [wall, *found]
+
+
 def detect(project):
     photo = primary_photo(project)
-    found = ai.detect_structure(read_bytes(photo), photo.mime, photo.width, photo.height)
+    found = drop_nested_walls(ensure_wall(ai.detect_structure(read_bytes(photo), photo.mime, photo.width, photo.height)))
     with transaction.atomic():
         Component.objects.filter(project_id=project.id, photo_id=photo.id).update(deleted_at=timezone.now())
         Component.objects.bulk_create([

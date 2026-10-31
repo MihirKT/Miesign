@@ -117,6 +117,15 @@ def _present_types(components):
     return sorted({c["type"] for c in components})
 
 
+DESIGN_NAME_LENGTH = 40
+
+
+def _name_from_request(text):
+    """Short, recognisable card title from the homeowner's own words."""
+    first = text.split(".")[0].strip()
+    return first if len(first) <= DESIGN_NAME_LENGTH else first[:DESIGN_NAME_LENGTH - 1].rstrip(" ,") + "…"
+
+
 def from_text(project, text):
     text = str(text or "").strip()
     if not MIN_TEXT <= len(text) <= MAX_TEXT:
@@ -127,7 +136,7 @@ def from_text(project, text):
         raise ai.AiUnavailable("The AI returned an unreadable design. Try again.")
     spec, warnings = validate_spec(raw, catalog, components)
     notes = [n[:200] for n in _as_list(raw.get("notes")) if isinstance(n, str)][:5]
-    return Design.objects.create(project_id=project.id, name="Your description", mode="free_text",
+    return Design.objects.create(project_id=project.id, name=_name_from_request(text), mode="free_text",
                                  input={"text": text}, spec=spec, warnings=notes + warnings)
 
 
