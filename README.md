@@ -4,7 +4,7 @@ AI exterior renovation planner and INR cost estimator: upload one photo of a hou
 
 Designed and built by Mihir Kapildev Tiwari.
 
-Live: https://miesign.pages.dev
+Live: https://miesign.pages.dev · Submission notes: https://miesign.pages.dev/submission/
 
 ## What it does
 
@@ -86,7 +86,7 @@ npm run dev                        # http://localhost:5173, proxies /api and /me
 
 One Google Cloud e2-micro VM (free tier, us-central1) with a service account that has `roles/aiplatform.user`, so Vertex needs no key file. Caddy serves `frontend/dist` over HTTPS (Let's Encrypt via sslip.io, no domain needed) and proxies `/api` and `/media` to gunicorn. Copy `miesign.tgz` (`git archive HEAD backend`), `dist.tgz` and `settings.py` to `/tmp` on the VM, then run `sudo bash deploy/setup.sh <host>`.
 
-The public URL is Cloudflare Pages: `cd frontend && npm run build && npx wrangler pages deploy dist --project-name miesign --branch main`. `frontend/functions/api/[[path]].js` forwards `/api/*` to the VM so the app and API share the `miesign.pages.dev` origin.
+The public URL is Cloudflare Pages: `cd frontend && npm run build && npx wrangler pages deploy dist --project-name miesign --branch main`. `frontend/functions/api/[[path]].js` forwards `/api/*` to the VM so the app and API share the `miesign.pages.dev` origin. Before deploying, copy `docs/submission` into `dist/submission` (with the HTML renamed to `index.html`) to publish the submission notes.
 
 ## Environment variables
 

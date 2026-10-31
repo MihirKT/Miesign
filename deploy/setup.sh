@@ -37,6 +37,7 @@ chown -R miesign:miesign "$APP"
 sudo -u miesign bash -c "set -a; . $APP/env; cd $APP/backend && $APP/venv/bin/python manage.py migrate --noinput"
 
 # Renders take 20-40 s, so the worker timeout is well above gunicorn's 30 s default.
+# Requests mostly wait on Gemini, so threads (cheap on 1 GB) let 8 users be served at once instead of 2.
 cat > /etc/systemd/system/miesign.service <<EOF
 [Unit]
 Description=Miesign API (gunicorn)
@@ -46,7 +47,7 @@ After=network.target
 User=miesign
 WorkingDirectory=$APP/backend
 EnvironmentFile=$APP/env
-ExecStart=$APP/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 2 --timeout 180
+ExecStart=$APP/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 2 --threads 4 --timeout 180
 Restart=always
 
 [Install]
