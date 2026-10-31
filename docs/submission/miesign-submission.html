@@ -140,8 +140,9 @@ footer { border-top: 2px solid var(--ink); padding-top: 18px; display: flex; fle
     <div class="facts">
       <div class="fact"><b>6</b><span>guided steps, photo to PDF</span></div>
       <div class="fact"><b>9</b><span>building part types detected</span></div>
+      <div class="fact"><b>52</b><span>named paint shades · 14 styles</span></div>
       <div class="fact"><b>12</b><span>catalog materials · 91 cities</span></div>
-      <div class="fact"><b>121</b><span>automated tests passing</span></div>
+      <div class="fact"><b>129</b><span>automated tests passing</span></div>
       <div class="fact"><b>2–4°</b><span>hue error on real photos</span></div>
     </div>
   </header>
@@ -185,13 +186,13 @@ footer { border-top: 2px solid var(--ink); padding-top: 18px; display: flex; fle
         <tbody>
           <tr><td class="ref">5.1</td><td>Media upload</td><td>Upload up to 5 photos. Each is rotated from EXIF, scaled to ≤ 2048 px, checked locally for size and blur, then checked by Gemini (“is this a house front, is it visible?”). Rejected photos show the reason and how to retake; accepted ones show tips. The first usable photo becomes the working photo.<small>managers/photos.py · steps/PhotoStep.tsx</small></td></tr>
           <tr><td class="ref">5.2</td><td>Structure identification</td><td>Gemini detects walls, windows, doors, balconies, pillars, parapets, gates, roof edges and railings as boxes on the photo. The user reviews them on a canvas and can move a part, drag its corners, change its type, delete it or add a new one.<small>ai.detect_structure · managers/structure.py · RegionCanvas.tsx</small></td></tr>
-          <tr><td class="ref">5.3</td><td>Design and material selection</td><td>A 12-item catalog (paints, texture, stone cladding, tiles, ACP and WPC panels, glass / steel railings) with durability, upkeep, budget and climate fit. Three ways in: describe it in words, answer five questions for three suggestions, or pick a material and colour per part. Several designs per project; switch and edit freely.<small>data/catalog.json · managers/designs.py · steps/DesignStep.tsx</small></td></tr>
+          <tr><td class="ref">5.3</td><td>Design and material selection</td><td>A 12-item catalog (paints, texture, stone cladding, tiles, ACP and WPC panels, glass / steel railings) with durability, upkeep, budget and climate fit. Three ways in: describe it in words (an <b>Enhance my idea</b> button rewrites a rough idea into a full brief, with undo), answer five questions across 14 styles (Kerala tropical, Rajasthani haveli, Mediterranean, Japandi, Art Deco and more) for three suggestions, or pick a material per part and a colour from 52 named exterior shades in 8 families or any custom colour. Several designs per project; switch and edit freely.<small>data/catalog.json · managers/designs.py · steps/DesignStep.tsx · components/ShadePicker.tsx</small></td></tr>
           <tr><td class="ref">5.4</td><td>Renovation visualisation</td><td>The user’s own photo is edited by Gemini’s image model with strict “keep the structure” rules and a swatch card of the exact colours. Before/after slider plus a legend of what changed.<small>ai.render · steps/PreviewStep.tsx</small></td></tr>
           <tr><td class="ref">5.5</td><td>Surface area estimation</td><td>Area from each part’s outline and a pixels-per-foot scale. Scale comes from one real measurement the user types, or from a standard 7 ft door / 4 ft window. Walls are net of windows and doors.<small>estimation.py</small></td></tr>
           <tr><td class="ref">5.6</td><td>Material quantities</td><td>Litres of paint and kg of texture (coats ÷ coverage), number of tiles (tile size), square feet of cladding and panels, running feet of railing. Each includes the material’s wastage %.<small>estimation.quantity</small></td></tr>
           <tr><td class="ref">5.7</td><td>Cost estimation</td><td>Material and labour cost per line, subtotal per category, grand total. Rates are looked up for the user’s city and every rate can be changed, with totals recalculating immediately.<small>managers/rates.py · steps/EstimateStep.tsx</small></td></tr>
           <tr><td class="ref">5.8</td><td>Report</td><td>Downloadable PDF with the original and redesigned photo, selected materials and colours, quantities, the full cost table, assumptions and a disclaimer.<small>managers/report.py</small></td></tr>
-          <tr><td class="ref">6</td><td>Non-functional</td><td>Plain-language UI with one-tap colour presets for non-technical users; photos downscaled before upload; typical waits of 5 s (parts), 9 s (design), 10 s (render); projects saved server-side and reopened by link; independent projects for many users at once.</td></tr>
+          <tr><td class="ref">6</td><td>Non-functional</td><td>A home page that explains the flow with a real before/after; plain-language steps with one-tap shades for non-technical users; a fluid loader in the design’s own colours over the photo while the AI works; photos downscaled before upload; typical waits of 5 s (parts), 9 s (design), 10 s (render); projects saved server-side and reopened by link; independent projects for many users at once.</td></tr>
           <tr><td class="ref">7–8</td><td>Assumptions and constraints</td><td>Low-rise residential, exterior only, advisory estimate. Needs only a photo: no drawings or measuring tools. One known height is optional.</td></tr>
         </tbody>
       </table>
@@ -207,7 +208,7 @@ footer { border-top: 2px solid var(--ink); padding-top: 18px; display: flex; fle
     <div class="diagram">
 <pre class="mermaid">
 flowchart LR
-  U["Homeowner<br/>React + Vite SPA"] -- "JSON over HTTPS" --> V["Django REST views<br/>18 endpoints"]
+  U["Homeowner<br/>React + Vite SPA"] -- "JSON over HTTPS" --> V["Django REST views<br/>19 endpoints"]
   V --> M["Managers<br/>photos · parts · designs<br/>rates · estimate · PDF"]
   M --> E["Estimation engine<br/>pure Python"]
   M --> DB[("SQLite<br/>projects, parts, designs, rate cache")]
@@ -222,7 +223,7 @@ flowchart LR
       <table>
         <thead><tr><th>Layer</th><th>Technology</th><th>Responsibility</th></tr></thead>
         <tbody>
-          <tr><td>Frontend</td><td>React 18, TypeScript, Vite, Konva</td><td>Six-step wizard, part editor canvas, before/after slider, editable cost table</td></tr>
+          <tr><td>Frontend</td><td>React 18, TypeScript, Vite, Konva</td><td>Home page, six-step wizard, part editor canvas, shade picker, before/after slider, editable cost table</td></tr>
           <tr><td>API</td><td>Django 5, Django REST Framework</td><td>RPC-style endpoints, IDs in query params, one error shape <code>{"error": {code, message}}</code></td></tr>
           <tr><td>Managers</td><td>Python</td><td>Validation, transactions, render cap, rate cache, soft deletes</td></tr>
           <tr><td>Estimation</td><td>Pure Python</td><td>Geometry, scale, quantities, costs, subtotals</td></tr>
@@ -238,10 +239,11 @@ flowchart LR
     <p class="label">4 · User workflow</p>
     <h2 id="h-flow">User workflow</h2>
     <ol class="steps">
+      <li><span class="n">00 Home</span><div><h3>See what Miesign does</h3><p>The home page shows a real before/after, the six steps and what is included. A saved project link skips it.</p></div></li>
       <li><span class="n">01 Photo</span><div><h3>Upload a photo and say where the house is</h3><p>Miesign checks the photo and either accepts it with tips or explains what to retake. Choosing the state and city sets local rates.</p></div></li>
       <li><span class="n">02 Parts</span><div><h3>Check the parts Miesign found</h3><p>Coloured outlines appear on the photo automatically. Fix anything by dragging, retyping, adding or deleting. Optionally enter one real height for more accurate areas.</p></div></li>
-      <li><span class="n">03 Design</span><div><h3>Choose colours and materials</h3><p>Describe it (“terracotta walls, cream parapet, black railing”), answer five questions for three costed options, or pick per part with one-tap colour presets.</p></div></li>
-      <li><span class="n">04 Preview</span><div><h3>See your own house redesigned</h3><p>Drag the slider between original and redesigned. A legend lists each change with its exact colour.</p></div></li>
+      <li><span class="n">03 Design</span><div><h3>Choose colours and materials</h3><p>Describe it (“terracotta walls, cream parapet, black railing”) and tap <b>Enhance my idea</b> to turn a rough idea into a full brief; start from one of 8 style examples; answer five questions across 14 styles for three costed options; or pick per part from 52 named shades or any colour.</p></div></li>
+      <li><span class="n">04 Preview</span><div><h3>See your own house redesigned</h3><p>While the render runs, a fluid loader in the design’s colours plays over the photo. Then drag the slider between original and redesigned; a legend lists each change with its exact colour.</p></div></li>
       <li><span class="n">05 Estimate</span><div><h3>See the cost, line by line</h3><p>Areas, quantities with wastage, material and labour cost, subtotals and the total in ₹. Change any rate your contractor quoted and the total updates.</p></div></li>
       <li><span class="n">06 Report</span><div><h3>Take it to the contractor</h3><p>Download the PDF or copy the project link to keep working later.</p></div></li>
     </ol>
@@ -311,6 +313,7 @@ line total    = material + labour;   category subtotal = Σ lines;   grand total
           <tr><td>Part detection</td><td>gemini-3.5-flash</td><td>Response schema allows only the 9 part types and 4-number boxes. Every house gets at least one wall; duplicate nested walls are removed. The user can correct everything.</td></tr>
           <tr><td>Reading a request / suggestions</td><td>gemini-3.5-flash</td><td>Schema limits materials to the catalog and targets to parts that exist. Named colours map to Miesign presets; given hex codes are copied verbatim. The server re-validates and explains anything it drops.</td></tr>
           <tr><td>City rate search</td><td>gemini-3.5-flash + Google Search</td><td>Source links kept; 0.3×–3× sanity bounds; city-tier fallback; cached.</td></tr>
+          <tr><td>Enhancing an idea</td><td>gemini-3.5-flash</td><td>Rewrites the user’s rough text into a brief using only catalog material names and Miesign shade names, keeps everything they asked for, never restyles windows or doors. Nothing is saved until the user creates the design.</td></tr>
           <tr><td>Redesign render</td><td>gemini-3.1-flash-image</td><td>Hard rules (same camera, no added or moved windows, doors or pillars) plus a swatch-card image of the exact colours. Capped at 8 per project, refunded if a render fails, cached when the design hasn’t changed.</td></tr>
         </tbody>
       </table>
@@ -375,8 +378,8 @@ line total    = material + labour;   category subtotal = Σ lines;   grand total
       <table>
         <thead><tr><th>Suite</th><th class="num">Tests</th><th>What it proves</th></tr></thead>
         <tbody>
-          <tr><td>Backend unit and API (pytest)</td><td class="num">100</td><td>Geometry, quantities and costs to the rupee; rate priority, bounds and cache expiry; design validation; photo gate; render cap and refunds; AI output parsing with Gemini mocked; the full API flow from upload to PDF.</td></tr>
-          <tr><td>Frontend (Vitest)</td><td class="num">21</td><td>Snake/camel conversion, ₹ formatting, step unlocking, part geometry, cost grouping, API errors, colour presets.</td></tr>
+          <tr><td>Backend unit and API (pytest)</td><td class="num">107</td><td>Geometry, quantities and costs to the rupee; rate priority, bounds and cache expiry; design validation; idea enhancer; 14 styles; backend shades match the frontend; photo gate; render cap and refunds; AI output parsing with Gemini mocked; the full API flow from upload to PDF.</td></tr>
+          <tr><td>Frontend (Vitest)</td><td class="num">22</td><td>Snake/camel conversion, ₹ formatting, step unlocking, part geometry, cost grouping, API errors, 52 unique shades in 8 families.</td></tr>
           <tr><td>Live AI checks</td><td class="num">8 photos</td><td><code>smoke_ai.py</code> and <code>requirement_check.py</code> run the real Vertex pipeline and measure render colour.</td></tr>
           <tr><td>Browser walkthrough</td><td class="num">4 widths</td><td>Full flow on desktop and phone; no sideways scroll; 44 px touch targets; loading, empty, error and success states.</td></tr>
         </tbody>
@@ -434,13 +437,14 @@ npx vitest run         # frontend tests (from frontend/)</div>
     ai.py            every Gemini call: schemas, prompts, swatch card, retries
     estimation.py    geometry, scale, quantities, costs (pure, no I/O)
     managers/        projects, photos, structure, designs, rates, estimates, report
-    views.py         thin HTTP layer for the 18 endpoints
+    views.py         thin HTTP layer for the 19 endpoints
     data/            catalog.json (12 materials), cities.json (91 cities)
-    tests/           100 pytest tests
+    tests/           107 pytest tests
   scripts/           smoke_ai.py, requirement_check.py (live checks)
 frontend/
   src/lib/           API client, types, formatting, geometry, palette (tested)
-  src/components/    step rail, part canvas, compare slider, rate cell, city picker
+  src/HomePage.tsx   home page
+  src/components/    step rail, part canvas, compare slider, shade picker, magic loader, rate cell, city picker
   src/steps/         the six screens
   src/tokens.css     design tokens
 docs/                architecture, estimation, limitations, design direction</div>
