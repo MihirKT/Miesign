@@ -96,6 +96,7 @@ textarea { min-height: 112px; resize: vertical; }
 .step-jump { width: auto; min-height: 40px; }
 
 /* feedback */
+.progress-line { font-size: var(--text-sm); color: var(--color-ink-2); }
 .notice {
   padding: var(--space-sm) var(--space-md); border-left: 2px solid var(--color-ink-3);
   background: var(--color-paper-2); font-size: var(--text-sm);
