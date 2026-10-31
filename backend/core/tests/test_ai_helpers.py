@@ -35,3 +35,21 @@ def test_render_prompt_contains_constraints_and_targets():
     assert payload["changes"][1]["apply_to"] == "every wall surface"
     assert payload["changes"][1]["material"] == "dark grey slate cladding"
     assert payload["keep_unchanged"] == ["window"]
+
+
+def test_swatch_card_has_one_tile_per_coloured_assignment():
+    from io import BytesIO
+
+    from PIL import Image
+
+    from core.ai import SWATCH_GAP, build_swatch_card
+
+    spec = {"assignments": [
+        {"target": "type:wall", "material_id": "x", "color": "#C8553D"},
+        {"target": "type:railing", "material_id": "y", "color": None},
+        {"target": "type:parapet", "material_id": "z", "color": "#F3E9DC"},
+    ]}
+    card = Image.open(BytesIO(build_swatch_card(spec))).convert("RGB")
+    assert card.getpixel((SWATCH_GAP + 50, SWATCH_GAP + 50)) == (0xC8, 0x55, 0x3D)
+    assert card.width > 2 * 200
+    assert build_swatch_card({"assignments": [{"target": "type:wall", "material_id": "x", "color": None}]}) is None

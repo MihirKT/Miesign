@@ -181,7 +181,7 @@ def render(design):
     try:
         photo = primary_photo(project)
         prompt = ai.build_render_prompt(design.spec, component_dicts(project), load_catalog(), photo.width, photo.height)
-        png = ai.render(read_bytes(photo), photo.mime, prompt)
+        png = ai.render(read_bytes(photo), photo.mime, prompt, swatch_png=ai.build_swatch_card(design.spec))
     except Exception:
         Project.objects.filter(id=project.id).update(render_count=F("render_count") - 1)
         raise

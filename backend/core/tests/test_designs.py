@@ -75,7 +75,7 @@ def test_from_text_saves_validated_design(project_with_parts, monkeypatch):
 def test_render_cache_and_cap(project_with_parts, monkeypatch, settings):
     settings.RENDER_CAP = 2
     calls = []
-    monkeypatch.setattr(ai, "render", lambda b, m, p: calls.append(p) or b"\x89PNG")
+    monkeypatch.setattr(ai, "render", lambda b, m, p, swatch_png=None: calls.append(p) or b"\x89PNG")
     design = designs.save(project_with_parts, None, "A", {"assignments": [
         {"target": "type:wall", "material_id": "texture_paint"}]})
 
@@ -96,7 +96,7 @@ def test_render_cache_and_cap(project_with_parts, monkeypatch, settings):
 
 
 def test_failed_render_refunds_cap(project_with_parts, monkeypatch):
-    def boom(*a):
+    def boom(*a, **k):
         raise ai.AiUnavailable()
 
     monkeypatch.setattr(ai, "render", boom)
@@ -157,7 +157,7 @@ def test_recommend_unions_user_keep_unchanged(project_with_parts, monkeypatch):
 
 
 def test_render_refunds_on_any_exception(project_with_parts, monkeypatch):
-    def boom(*a):
+    def boom(*a, **k):
         raise RuntimeError("x")
 
     monkeypatch.setattr(ai, "render", boom)

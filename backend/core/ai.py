@@ -2,22 +2,45 @@ import json
 import logging
 import time
 from functools import lru_cache
+from io import BytesIO
 
 from django.conf import settings
 from google import genai
 from google.genai import types
+from PIL import Image, ImageDraw
 
 from core.errors import AppError
 from core.estimation import COMPONENT_TYPES, bbox
 
 logger = logging.getLogger(__name__)
 BOX_SCALE = 1000
+DETECTION_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "components": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "type": {"type": "STRING", "enum": list(COMPONENT_TYPES)},
+                    "box_2d": {"type": "ARRAY", "items": {"type": "INTEGER"}, "minItems": 4, "maxItems": 4},
+                    "floor": {"type": "INTEGER"},
+                    "confidence": {"type": "NUMBER"},
+                },
+                "required": ["type", "box_2d", "floor"],
+            },
+        },
+    },
+    "required": ["components"],
+}
 RETRY_DELAY_SECONDS = 1
 HARD_CONSTRAINTS = [
     "Keep the exact same camera angle, framing, perspective, lighting direction and image size.",
     "Do not move, add, remove or resize any window, door, balcony, pillar, wall, roof or gate.",
     "Keep sky, ground, trees, vehicles and neighbouring buildings unchanged.",
     "Change only the surface materials and colours listed in 'changes'.",
+    "Each 'color' is an exact sRGB hex value: reproduce that hue and saturation faithfully under the photo's "
+    "daylight; do not drift warmer, cooler, lighter or darker.",
 ]
 
 
@@ -104,10 +127,13 @@ def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def _json_call(contents, temperature=0.2, tools=None, expect=dict):
+def _json_call(contents, temperature=0.2, tools=None, expect=dict, schema=None):
     config = types.GenerateContentConfig(temperature=temperature, tools=tools)
     if tools is None:
         config.response_mime_type = "application/json"
+        # A schema stops the model drifting into unrelated JSON (seen live: a car listing for a house photo).
+        if schema is not None:
+            config.response_schema = schema
     response = _generate(settings.MODEL_TEXT, contents, config)
     unreadable = AiUnavailable("The AI returned an unreadable answer. Try again.")
     try:
@@ -155,7 +181,8 @@ def detect_structure(image_bytes, mime, width, height):
         "Return one entry per visible wall face, window, door, balcony, pillar, parapet, gate, roof edge and railing. "
         "Ignore neighbouring buildings, vehicles, trees and people."
     )
-    data, _ = _json_call([_image_part(image_bytes, mime), prompt], temperature=0, expect=(dict, list))
+    data, _ = _json_call([prompt, _image_part(image_bytes, mime)], temperature=0, expect=(dict, list),
+                         schema=DETECTION_SCHEMA)
     # Vision models often answer with the bare array of boxes instead of the wrapping object.
     items = data if isinstance(data, list) else _list(data.get("components"))
     found = []
@@ -191,6 +218,42 @@ SPEC_SHAPE = (
 )
 
 
+def _spec_schema(material_ids, present_types):
+    """Response schema for a DesignSpec; enums keep the model inside the catalog and the house's parts."""
+    targets = [f"type:{t}" for t in present_types] or ["type:wall"]
+    return {
+        "type": "OBJECT",
+        "properties": {
+            "style": {"type": "STRING"},
+            "palette": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "assignments": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "target": {"type": "STRING", "enum": targets},
+                        "material_id": {"type": "STRING", "enum": list(material_ids)},
+                        "color": {"type": "STRING", "nullable": True},
+                        "finish": {"type": "STRING"},
+                    },
+                    "required": ["target", "material_id"],
+                },
+            },
+            "keep_unchanged": {"type": "ARRAY", "items": {"type": "STRING", "enum": list(COMPONENT_TYPES)}},
+            "notes": {"type": "ARRAY", "items": {"type": "STRING"}},
+        },
+        "required": ["assignments"],
+    }
+
+
+COLOUR_RULES = (
+    "Colours: every paint, texture or panel assignment gets a color as an exact #RRGGBB. "
+    "If the homeowner gives a hex code, copy it verbatim; if they name a colour (e.g. terracotta, sage green, "
+    "off-white), choose the standard hex for that name. Use null only for materials whose look is fixed "
+    "(natural stone, glass, steel, wood-look). "
+)
+
+
 def parse_text(text, present_types, catalog):
     prompt = (
         "Convert a homeowner's exterior renovation request into a design spec. "
@@ -199,10 +262,11 @@ def parse_text(text, present_types, catalog):
         f"Reply with JSON only in this shape: {SPEC_SHAPE}. Rules: use only material_id values from the catalog; "
         "only target component types that are present and listed in that material's applies_to; "
         "if the request names a material that is not in the catalog, use the closest catalog material and say so in notes; "
-        "put components the homeowner wants untouched in keep_unchanged.\n"
+        "put components the homeowner wants untouched in keep_unchanged. "
+        f"{COLOUR_RULES}\n"
         f"Request: {text}"
     )
-    data, _ = _json_call([prompt])
+    data, _ = _json_call([prompt], schema=_spec_schema(catalog.keys(), present_types))
     return data
 
 
@@ -214,9 +278,20 @@ def recommend(answers, shortlist, present_types):
         f"Allowed materials: {json.dumps(_catalog_brief(shortlist))}. "
         'Reply with JSON only: {"designs": [{"name": string, "rationale": string (2 sentences: why these materials '
         f'suit the climate, budget and upkeep), "spec": {SPEC_SHAPE}}}]}}. '
-        "Use only listed material_id values and only present component types that each material applies to."
+        "Use only listed material_id values and only present component types that each material applies to. "
+        f"Pick a coherent palette that follows the colour mood if one is given. {COLOUR_RULES}"
     )
-    data, _ = _json_call([prompt], temperature=0.6)
+    spec = _spec_schema([i["id"] for i in shortlist], present_types)
+    schema = {
+        "type": "OBJECT",
+        "properties": {"designs": {"type": "ARRAY", "items": {
+            "type": "OBJECT",
+            "properties": {"name": {"type": "STRING"}, "rationale": {"type": "STRING"}, "spec": spec},
+            "required": ["name", "rationale", "spec"],
+        }}},
+        "required": ["designs"],
+    }
+    data, _ = _json_call([prompt], temperature=0.6, schema=schema)
     return [d for d in _list(data.get("designs")) if isinstance(d, dict)][:3]
 
 
@@ -252,9 +327,45 @@ def search_rates(state, city, items):
     return rows
 
 
-def render(image_bytes, mime, prompt):
+SWATCH_TILE = 200
+SWATCH_GAP = 10
+SWATCH_LABEL_HEIGHT = 40
+SWATCH_NOTE = (
+    "\nThe second image is the exact paint swatch card, one labelled tile per surface. Match each surface's "
+    "colour to its swatch as it would look in daylight, keeping the swatch's saturation."
+)
+
+
+def build_swatch_card(spec):
+    """PNG of labelled colour tiles for every coloured assignment, or None when nothing is coloured.
+
+    Live tests showed text-only hex codes come out ~40 % less saturated; a reference image keeps
+    hue and saturation much closer to what the homeowner picked.
+    """
+    tiles = [(a["target"].split(":", 1)[-1].replace("_", " "), a["color"])
+             for a in spec.get("assignments", []) if a.get("color")]
+    if not tiles:
+        return None
+    step = SWATCH_TILE + SWATCH_GAP
+    card = Image.new("RGB", (step * len(tiles) + SWATCH_GAP, SWATCH_TILE + SWATCH_LABEL_HEIGHT + SWATCH_GAP), "white")
+    draw = ImageDraw.Draw(card)
+    for i, (label, colour) in enumerate(tiles):
+        x = SWATCH_GAP + i * step
+        draw.rectangle((x, SWATCH_GAP, x + SWATCH_TILE, SWATCH_GAP + SWATCH_TILE), fill=colour)
+        draw.text((x, SWATCH_TILE + SWATCH_GAP * 2), f"{label}: {colour}", fill="black")
+    buf = BytesIO()
+    card.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def render(image_bytes, mime, prompt, swatch_png=None):
     config = types.GenerateContentConfig(response_modalities=["IMAGE"])
-    response = _generate(settings.MODEL_IMAGE, [_image_part(image_bytes, mime), prompt], config)
+    contents = [_image_part(image_bytes, mime)]
+    if swatch_png:
+        contents += [_image_part(swatch_png, "image/png"), prompt + SWATCH_NOTE]
+    else:
+        contents.append(prompt)
+    response = _generate(settings.MODEL_IMAGE, contents, config)
     for candidate in response.candidates or []:
         content = getattr(candidate, "content", None)
         for part in getattr(content, "parts", None) or []:

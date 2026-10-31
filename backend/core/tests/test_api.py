@@ -33,7 +33,7 @@ def api(monkeypatch):
     monkeypatch.setattr(ai, "check_photo", lambda b, m: GOOD)
     monkeypatch.setattr(ai, "detect_structure", lambda b, m, w, h: PARTS)
     monkeypatch.setattr(ai, "search_rates", lambda s, c, items: [])
-    monkeypatch.setattr(ai, "render", lambda b, m, p: png_bytes())
+    monkeypatch.setattr(ai, "render", lambda b, m, p, swatch_png=None: png_bytes())
     monkeypatch.setattr(ai, "parse_text", lambda t, types, cat: {
         "assignments": [{"target": "type:wall", "material_id": "texture_paint", "color": "#D9D4CC"},
                         {"target": "type:railing", "material_id": "glass_railing"}]})
