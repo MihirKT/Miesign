@@ -6,6 +6,7 @@
 
 import { useState } from 'react'
 import CitySelect from '../components/CitySelect'
+import MagicLoader from '../components/MagicLoader'
 import { api, errorMessage } from '../lib/api'
 import { useElapsed } from '../lib/hooks'
 import type { Project, StateEntry } from '../lib/types'
@@ -83,23 +84,25 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
               </ol>
             </div>
           )}
-          <label
-            className="dropzone"
-            data-over={over}
-            onDragOver={(e) => { e.preventDefault(); if (!busy) setOver(true) }}
-            onDragLeave={() => setOver(false)}
-            onDrop={(e) => { e.preventDefault(); setOver(false); if (!busy) pick(e.dataTransfer.files) }}
-          >
-            <input
-              className="sr-only"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              disabled={busy}
-              onChange={(e) => { pick(e.target.files); e.target.value = '' }}
-            />
-            <strong>{busy ? `Checking your photo… ${elapsed}s` : 'Choose a photo or drop it here'}</strong>
-            <span className="lede">JPG, PNG or WEBP · at least 400 px on the short side · up to 15 MB</span>
-          </label>
+          <MagicLoader active={busy} label="Checking your photo…" seconds={elapsed}>
+            <label
+              className="dropzone"
+              data-over={over}
+              onDragOver={(e) => { e.preventDefault(); if (!busy) setOver(true) }}
+              onDragLeave={() => setOver(false)}
+              onDrop={(e) => { e.preventDefault(); setOver(false); if (!busy) pick(e.dataTransfer.files) }}
+            >
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={busy}
+                onChange={(e) => { pick(e.target.files); e.target.value = '' }}
+              />
+              <strong>{busy ? `Checking your photo… ${elapsed}s` : 'Choose a photo or drop it here'}</strong>
+              <span className="lede">JPG, PNG or WEBP · at least 400 px on the short side · up to 15 MB</span>
+            </label>
+          </MagicLoader>
           <p className="sr-only" aria-live="polite">{status}</p>
           {error && <p className="notice error" role="alert">{error}</p>}
           {primary?.qualityOk && primary.tips.length > 0 && (

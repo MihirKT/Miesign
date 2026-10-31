@@ -7,28 +7,38 @@
 import { useMemo, useState } from 'react'
 import { api, errorMessage } from '../lib/api'
 import AssignmentList from '../components/AssignmentList'
+import ShadePicker from '../components/ShadePicker'
 import { typeLabel } from '../lib/format'
 import { PAINT_PRESETS, colorText } from '../lib/palette'
 import { useElapsed } from '../lib/hooks'
 import type { Answers, Assignment, ComponentType, Design, DesignSpec, Material, Project } from '../lib/types'
 
 type Tab = 'describe' | 'guided' | 'manual'
+const PAINT_COUNT = PAINT_PRESETS.length
 type Pick = { materialId: string; color: string | null }
 
 const EXAMPLES = [
-  { label: 'Terracotta walls', text: 'Terracotta walls, cream parapet, black railing' },
-  { label: 'Sage green walls', text: 'Sage green walls, wooden louvers, steel railing' },
-  { label: 'Charcoal ACP panels', text: 'Charcoal ACP panels, white pillars, glass railing' },
+  { label: 'Terracotta and cream', text: 'Terracotta walls, cream parapet, black railing' },
+  { label: 'Sage and wood', text: 'Sage green walls, wooden panels on the balcony, steel railing' },
+  { label: 'Charcoal modern', text: 'Charcoal ACP panels, white pillars, glass railing' },
+  { label: 'Kerala tropical', text: 'Kerala style: ivory walls, brick red cladding on pillars, wood-look panels on the balcony' },
+  { label: 'Rajasthani haveli', text: 'Rajasthani haveli look: sandstone cladding, ochre walls, maroon accents, black metal railing' },
+  { label: 'Mediterranean', text: 'Mediterranean villa: pearl white texture walls, terracotta parapet, powder blue gate' },
+  { label: 'Japandi calm', text: 'Japandi: mushroom beige walls, walnut wood panels, slim charcoal railing' },
+  { label: 'Art Deco', text: 'Art Deco: cream walls, deep teal bands on the parapet, black metal railing' },
 ]
 const CHOICES = {
   budget: [['low', 'Tight'], ['mid', 'Balanced'], ['high', 'Premium']],
   climate: [['moderate', 'Moderate'], ['heavy_rain', 'Heavy rain'], ['coastal', 'Coastal'], ['hot_dry', 'Hot and dry']],
-  style: [['modern', 'Modern'], ['traditional', 'Traditional'], ['minimal', 'Minimal'], ['luxe', 'Luxe']],
+  style: [
+    ['modern', 'Modern'], ['contemporary', 'Contemporary'], ['minimal', 'Minimal'], ['traditional', 'Traditional Indian'],
+    ['kerala', 'Kerala tropical'], ['rajasthani', 'Rajasthani haveli'], ['colonial', 'Colonial'], ['mediterranean', 'Mediterranean'],
+    ['scandinavian', 'Scandinavian'], ['japandi', 'Japandi / zen'], ['industrial', 'Industrial'], ['farmhouse', 'Farmhouse rustic'],
+    ['art_deco', 'Art Deco'], ['luxe', 'Luxe'],
+  ],
   maintenance: [['low', 'Low upkeep'], ['medium', 'Some upkeep is fine']],
 } as const
 const MODE_LABEL: Record<Design['mode'], string> = { free_text: 'From your words', guided: 'Suggested', manual: 'Picked by you' }
-// Neutral starting swatch for the colour picker; stored only when the user changes it.
-const DEFAULT_SWATCH = '#d9d4cc'
 
 interface Props {
   project: Project
@@ -48,9 +58,35 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
   const [picks, setPicks] = useState<Partial<Record<ComponentType, Pick>>>({})
   const [editing, setEditing] = useState<Design | null>(null)
   const [busy, setBusy] = useState(false)
+  const [enhancing, setEnhancing] = useState(false)
+  const [beforeEnhance, setBeforeEnhance] = useState<string | null>(null)
+  const [browseShade, setBrowseShade] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
-  const elapsed = useElapsed(busy)
+  const elapsed = useElapsed(busy || enhancing)
+
+  async function enhance() {
+    if (enhancing || busy) return
+    setEnhancing(true)
+    setError(null)
+    setDone(null)
+    try {
+      const better = await api.enhanceText(project.id, text)
+      setBeforeEnhance(text)
+      setText(better)
+      setDone('Idea enhanced. Edit it if you like, then create the design.')
+    } catch (e) {
+      setError(errorMessage(e))
+    } finally {
+      setEnhancing(false)
+    }
+  }
+
+  function addShade(hex: string) {
+    const name = colorText(hex)
+    setBrowseShade(hex)
+    setText((t) => (t.trim() ? `${t.trim().replace(/[.,]$/, '')}, ${name}` : name))
+  }
 
   const byId = useMemo(() => new Map(catalog.map((m) => [m.id, m])), [catalog])
   const present = useMemo(
@@ -136,15 +172,39 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
           </div>
 
           {tab === 'describe' && (
-            <fieldset className="stack plain-fieldset" role="tabpanel" disabled={busy}>
+            <fieldset className="stack plain-fieldset" role="tabpanel" disabled={busy || enhancing}>
               <div className="field">
                 <label htmlFor="design-text">What should the house look like?</label>
-                <textarea id="design-text" maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} />
+                <div className={enhancing ? 'enhance-wrap is-enhancing' : 'enhance-wrap'}>
+                  <textarea id="design-text" maxLength={1000} value={text} placeholder="e.g. warm earthy walls, wooden balcony, black railing"
+                    onChange={(e) => { setText(e.target.value); setBeforeEnhance(null) }} />
+                </div>
+                <div className="row">
+                  <button type="button" className="btn btn-small btn-enhance" disabled={enhancing || busy || text.trim().length < 3}
+                    aria-busy={enhancing} onClick={enhance}>
+                    <span aria-hidden="true">✦</span> {enhancing ? `Enhancing… ${elapsed}s` : 'Enhance my idea'}
+                  </button>
+                  {beforeEnhance !== null && (
+                    <button type="button" className="btn btn-small" onClick={() => { setText(beforeEnhance); setBeforeEnhance(null); setDone(null) }}>
+                      Undo
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="chips" aria-label="Examples">
-                {EXAMPLES.map((ex) => <button key={ex.label} type="button" className="chip" onClick={() => setText(ex.text)}>{ex.label}</button>)}
+              <div className="field">
+                <span className="field-label">Start from a style</span>
+                <div className="chips" aria-label="Examples">
+                  {EXAMPLES.map((ex) => (
+                    <button key={ex.label} type="button" className="chip" onClick={() => { setText(ex.text); setBeforeEnhance(null) }}>{ex.label}</button>
+                  ))}
+                </div>
               </div>
-              <button type="button" className="btn btn-primary" disabled={busy || text.trim().length < 3} aria-busy={busy}
+              <details className="shade-browser">
+                <summary>Browse {PAINT_COUNT} paint shades</summary>
+                <p className="lede">Tap a shade to add its name to your description.</p>
+                <ShadePicker label="Description" value={browseShade} onChange={addShade} />
+              </details>
+              <button type="button" className="btn btn-primary" disabled={busy || enhancing || text.trim().length < 3} aria-busy={busy}
                 onClick={() => create(() => api.designFromText(project.id, text), () => 'Design created.')}>
                 {busy ? `Reading your request… ${elapsed}s` : 'Create design'}
               </button>
@@ -208,25 +268,15 @@ export default function DesignStep({ project, catalog, activeDesignId, onChange,
                 return (
                   <div key={t} className="field">
                     <label htmlFor={`m-${t}`}>{typeLabel(t)}</label>
-                    <div className="row">
-                      <select id={`m-${t}`} value={pick?.materialId ?? ''} style={{ flex: '1 1 200px' }}
-                        onChange={(e) => setPicks((p) => ({ ...p, [t]: { materialId: e.target.value, color: p[t]?.color ?? null } }))}>
-                        <option value="">Leave as it is</option>
-                        {options.map((m) => <option key={m.id} value={m.id}>{`${m.name} · ${m.durabilityYears} yrs · ${m.maintenance} upkeep`}</option>)}
-                      </select>
-                      <input type="color" aria-label={`${typeLabel(t)} colour`} disabled={!pick?.materialId}
-                        value={pick?.color ?? DEFAULT_SWATCH}
-                        onChange={(e) => setPicks((p) => ({ ...p, [t]: { materialId: p[t]?.materialId ?? '', color: e.target.value } }))} />
-                    </div>
-                    <div className="swatches" role="group" aria-label={`${typeLabel(t)} quick colours`}>
-                      {PAINT_PRESETS.map((s) => (
-                        <button key={s.hex} type="button" className="swatch-btn" style={{ background: s.hex }}
-                          aria-label={`Use ${s.name} ${s.hex}`} aria-pressed={pick?.color?.toLowerCase() === s.hex.toLowerCase()}
-                          disabled={!pick?.materialId}
-                          onClick={() => setPicks((p) => ({ ...p, [t]: { materialId: p[t]?.materialId ?? '', color: s.hex } }))} />
-                      ))}
-                    </div>
-                    {pick?.color && <span className="mono">{colorText(pick.color)}</span>}
+                    <select id={`m-${t}`} value={pick?.materialId ?? ''}
+                      onChange={(e) => setPicks((p) => ({ ...p, [t]: { materialId: e.target.value, color: p[t]?.color ?? null } }))}>
+                      <option value="">Leave as it is</option>
+                      {options.map((m) => <option key={m.id} value={m.id}>{`${m.name} · ${m.durabilityYears} yrs · ${m.maintenance} upkeep`}</option>)}
+                    </select>
+                    {pick?.materialId && (
+                      <ShadePicker label={typeLabel(t)} value={pick.color}
+                        onChange={(hex) => setPicks((p) => ({ ...p, [t]: { materialId: p[t]?.materialId ?? '', color: hex } }))} />
+                    )}
                     {chosen && <span className="badge">Lasts {chosen.durabilityYears} yrs · {chosen.maintenance} upkeep</span>}
                   </div>
                 )

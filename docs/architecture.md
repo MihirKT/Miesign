@@ -58,6 +58,7 @@ All mutations are `POST`; ids are query parameters; bodies and responses are `sn
 | GET | `/api/rates?state=&city=&project_id=` | | `{rates: [row]}` (`project_id` optional; applies overrides) |
 | POST | `/api/rates/override?project_id=` | `{material_id, material_rate?, labor_rate?}` | `{rates: [row]}` |
 | POST | `/api/design/from-text?project_id=` | `{text}` (3-1000 chars) | `{designs: [design]}` |
+| POST | `/api/design/enhance?project_id=` | `{text}` | `{text}`: the idea rewritten as a specific brief (no design is saved) |
 | POST | `/api/design/recommend?project_id=` | answers: `budget`, `climate`, `style`, `maintenance`, `color_mood?`, `keep_unchanged?` | `{designs: [design]}` (up to 3) |
 | POST | `/api/design/save?project_id=` | `{id?, name, spec}` | `{designs: [design]}` |
 | POST | `/api/design/render?id=` | | design |

@@ -1,11 +1,12 @@
 /**
- * App shell. Owns the project, catalog and current step, creates the project lazily on first upload, and resumes a project from the ?p= link.
+ * App shell. Shows the home page first, then owns the project, catalog and current step, creates the project lazily on first upload, and resumes a project from the ?p= link.
  *
  * Miesign · Author: Mihir Kapildev Tiwari
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import StepRail from './components/StepRail'
+import HomePage from './HomePage'
 import { api, errorMessage } from './lib/api'
 import { resumeStep, unlockedSteps, type StepKey } from './lib/steps'
 import type { Material, Project, StateEntry } from './lib/types'
@@ -25,6 +26,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(Boolean(new URLSearchParams(window.location.search).get('p')))
+  // A shared ?p= link skips the home page and opens the project directly.
+  const [started, setStarted] = useState(Boolean(new URLSearchParams(window.location.search).get('p')))
   const pending = useRef<Promise<Project> | null>(null)
 
   useEffect(() => {
@@ -71,6 +74,8 @@ export default function App() {
     setStep(next)
     window.scrollTo({ top: 0 })
   }
+
+  if (!started) return <HomePage onStart={() => { setStarted(true); window.scrollTo({ top: 0 }) }} />
 
   return (
     <div className="app">

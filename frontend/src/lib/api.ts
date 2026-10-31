@@ -82,6 +82,9 @@ export const api = {
   designFromText: (projectId: string, text: string) =>
     request<{ designs: Design[] }>('POST', '/api/design/from-text', { query: { project_id: projectId }, body: { text } })
       .then((r) => r.designs),
+  enhanceText: (projectId: string, text: string) =>
+    request<{ text: string }>('POST', '/api/design/enhance', { query: { project_id: projectId }, body: { text } })
+      .then((r) => r.text),
   recommend: (projectId: string, answers: Answers) =>
     request<{ designs: Design[] }>('POST', '/api/design/recommend', { query: { project_id: projectId }, body: answers })
       .then((r) => r.designs),

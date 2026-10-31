@@ -8,9 +8,12 @@ Live: https://miesign.pages.dev · Submission notes: https://miesign.pages.dev/s
 
 ## What it does
 
+A home page explains the flow and shows a real before/after; a shared `?p=` link opens the project directly.
+
+
 1. **Photo.** Upload a house photo. Local checks (size, blur) run first, then Gemini confirms it is a house with the front visible. Choose the city for local rates.
 2. **Parts.** Gemini detects walls, windows, doors, balconies, pillars, parapets, gates, roof edges and railings as boxes. Drag, retype, add or delete them. Optionally enter one real height to fix the scale.
-3. **Design.** Describe the look in words, answer four guided questions for three suggestions, or pick materials and colours by hand.
+3. **Design.** Describe the look in words (an **Enhance my idea** button turns a rough idea into a full brief), answer four guided questions across 14 styles for three suggestions, or pick materials and colours by hand from 52 named shades in 8 families or any custom colour.
 4. **Preview.** Gemini edits the photo with the chosen materials. Compare with the original on a slider. Eight previews per project.
 5. **Estimate.** Areas, quantities with wastage, and costs per category, using city rates. Any rate can be overridden.
 6. **Report.** Download a PDF with the photos, materials, measurements and cost breakdown.
@@ -29,7 +32,7 @@ backend/
   core/
     models.py        6 models with soft delete
     views.py         thin HTTP layer
-    urls.py          the 18 endpoints
+    urls.py          the 19 endpoints
     managers/        business logic (projects, photos, structure, rates, designs, estimates, report)
     ai.py            all Gemini calls
     estimation.py    pure geometry, quantity and cost maths

@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import AssignmentList from '../components/AssignmentList'
 import CompareSlider from '../components/CompareSlider'
+import MagicLoader from '../components/MagicLoader'
 import { api, errorMessage } from '../lib/api'
 import { useElapsed } from '../lib/hooks'
 import type { Design, Material, Project } from '../lib/types'
@@ -60,18 +61,21 @@ export default function PreviewStep({ project, design, catalog, onChange, onSele
       </header>
       <div className="workspace">
         <div className="stack">
-          {photo && design.renderUrl ? (
-            <CompareSlider before={photo.url} after={design.renderUrl} alt="Your house" />
-          ) : (
-            photo && <img src={photo.url} alt="Your house, original" />
-          )}
+          <MagicLoader active={busy} label="Applying materials to your photo…" seconds={elapsed}
+            colors={design.spec.assignments.map((a) => a.color)}>
+            {photo && design.renderUrl ? (
+              <CompareSlider before={photo.url} after={design.renderUrl} alt="Your house" />
+            ) : (
+              photo && <img src={photo.url} alt="Your house, original" />
+            )}
+          </MagicLoader>
           {design.spec.assignments.length > 0 && (
             <div className="stack">
               <h2>What changes</h2>
               <AssignmentList assignments={design.spec.assignments} catalog={catalog} partFirst />
             </div>
           )}
-          {busy && <p className="progress-line">Applying materials to your photo… {elapsed}s (usually 20–40 s)</p>}
+          {busy && <p className="progress-line">Usually 10–40 s. You can read what changes below while you wait.</p>}
           <p role="status" aria-live="polite" className={done ? 'notice ok' : undefined}>{done}</p>
           {error && <p className="notice error" role="alert">{error}</p>}
         </div>

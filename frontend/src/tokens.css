@@ -21,16 +21,6 @@
   --color-error: oklch(50% 0.17 25);
   --color-focus: oklch(52% 0.17 250);
 
-  /* exterior paint presets */
-  --paint-off-white: #F3EFE6;
-  --paint-cream: #F3E9DC;
-  --paint-sandstone: #D8C3A5;
-  --paint-terracotta: #C8553D;
-  --paint-sage-green: #9CAF88;
-  --paint-sky-grey: #A7B4BE;
-  --paint-charcoal: #36454F;
-  --paint-deep-teal: #2F5D62;
-
   --region-wall: oklch(62% 0.14 38);
   --region-window: oklch(62% 0.14 230);
   --region-door: oklch(62% 0.14 280);
@@ -51,6 +41,7 @@
   --text-xl: 1.375rem;
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
+  --text-4xl: 3.25rem;
 
   --space-2xs: 4px;
   --space-xs: 8px;

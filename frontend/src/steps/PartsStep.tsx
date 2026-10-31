@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import MagicLoader from '../components/MagicLoader'
 import RegionCanvas from '../components/RegionCanvas'
 import { api, errorMessage } from '../lib/api'
 import { typeLabel } from '../lib/format'
@@ -102,16 +103,17 @@ export default function PartsStep({ project, onChange, onNext }: Props) {
       </header>
       <div className="workspace">
         <div className="stack">
-          <RegionCanvas
-            src={photo.url}
-            width={photo.width}
-            height={photo.height}
-            parts={parts}
-            selected={locked ? null : selected}
-            onSelect={(i) => { if (!locked) setSelected(i) }}
-            onChange={(i, quad) => { if (!locked) edit(i, { quad }) }}
-          />
-          {busy === 'detect' && <p className="progress-line" role="status">Finding walls, windows and pillars… {elapsed}s</p>}
+          <MagicLoader active={busy === 'detect'} label="Finding walls, windows and pillars…" seconds={elapsed}>
+            <RegionCanvas
+              src={photo.url}
+              width={photo.width}
+              height={photo.height}
+              parts={parts}
+              selected={locked ? null : selected}
+              onSelect={(i) => { if (!locked) setSelected(i) }}
+              onChange={(i, quad) => { if (!locked) edit(i, { quad }) }}
+            />
+          </MagicLoader>
           {error && <p className="notice error" role="alert">{error}</p>}
           {message && <p className="notice ok" role="status">{message}</p>}
         </div>
