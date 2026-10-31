@@ -192,11 +192,8 @@ textarea { min-height: 112px; resize: vertical; }
 .cost-table .num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cost-table .subtotal td { font-weight: 600; border-bottom: var(--rule-thick); }
 .rate-input { width: 8ch; min-height: 36px; text-align: right; font-family: var(--font-mono); }
-.total-bar {
-  position: sticky; bottom: 0; display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-md);
-  padding: var(--space-md) 0; border-top: var(--rule-thick); background: var(--color-paper);
-}
-.total-bar .amount { font-family: var(--font-mono); font-size: var(--text-2xl); font-weight: 500; white-space: nowrap; }
+.summary-card { display: grid; gap: var(--space-2xs); padding: var(--space-md) 0; border-top: var(--rule-thick); border-bottom: var(--rule-hair); }
+.summary-card .amount { font-family: var(--font-mono); font-size: var(--text-3xl); font-weight: 500; white-space: nowrap; }
 .footer { display: grid; gap: var(--space-2xs); margin-top: var(--space-3xl); padding-top: var(--space-md); border-top: var(--rule-hair); font-size: var(--text-xs); color: var(--color-ink-3); }
 
 @media (max-width: 1023px) {
@@ -212,6 +209,15 @@ textarea { min-height: 112px; resize: vertical; }
   h1 { font-size: var(--text-2xl); }
   .swatches { gap: var(--space-sm); }
   .swatch-btn::after { inset: -6px; }
+  .table-scroll { overflow-x: visible; }
+  .cost-table, .cost-table tbody, .cost-table tr, .cost-table td { display: block; }
+  .cost-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .cost-table tbody { margin-bottom: var(--space-md); }
+  .cost-table tr { padding: var(--space-xs) 0; border-bottom: var(--rule-hair); }
+  .cost-table td { display: flex; justify-content: space-between; align-items: center; gap: var(--space-md); border: 0; padding: var(--space-2xs) 0; }
+  .cost-table td[data-label]::before { content: attr(data-label); font-family: var(--font-body); font-weight: 500; color: var(--color-ink-2); text-align: left; }
+  .cost-table td:first-child { display: block; }
+  .cost-table .subtotal td { font-weight: 600; }
   .btn-small, .rate-input, .step-jump, .chip, .part-row { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {

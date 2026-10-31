@@ -78,6 +78,7 @@ export default function EstimateStep({ project, design, onNext }: Props) {
   }
 
   const rateFor = (id: string) => rates.find((r) => r.materialId === id)
+  const sqft = estimate?.lines.reduce((sum, l) => sum + (l.rateUnit === 'sqft' ? l.measure : 0), 0) ?? 0
   const sources = [...new Set(rates.flatMap((r) => r.sources))]
 
   return (
@@ -98,6 +99,15 @@ export default function EstimateStep({ project, design, onNext }: Props) {
       {estimate && (
         <div className="stack">
           {estimate.warnings.length > 0 && <div className="notice warn"><ul>{estimate.warnings.map((w) => <li key={w}>{w}</li>)}</ul></div>}
+          {estimate.lines.length > 0 && (
+            <div className="summary-card">
+              <span className="label">Estimated total</span>
+              <span className="amount">{inr(total)}</span>
+              <p className="lede">
+                {estimate.lines.length} material{estimate.lines.length === 1 ? '' : 's'} · {num(sqft)} sq ft of surfaces · rates for {project.city || 'your area'}
+              </p>
+            </div>
+          )}
           {estimate.lines.length === 0 ? (
             <p className="notice">This design has no priced materials. Pick materials on step 03.</p>
           ) : (
@@ -130,27 +140,27 @@ export default function EstimateStep({ project, design, onNext }: Props) {
                               </span>
                             </div>
                           </td>
-                          <td className="num">{num(line.measure)} {line.rateUnit}</td>
-                          <td className="num">{num(line.quantity)} {line.qtyUnit}</td>
-                          <td className="num">
+                          <td className="num" data-label="Area / length">{num(line.measure)} {line.rateUnit}</td>
+                          <td className="num" data-label="Quantity">{num(line.quantity)} {line.qtyUnit}</td>
+                          <td className="num" data-label="Material ₹/unit">
                             <RateCell value={line.materialRate} label={`${line.name} material rate per ${line.rateUnit}`}
                               onCommit={(v) => override(line.materialId, { materialRate: v })} onInvalid={setRateError} />
                           </td>
-                          <td className="num">
+                          <td className="num" data-label="Labour ₹/unit">
                             <RateCell value={line.laborRate} label={`${line.name} labour rate per ${line.rateUnit}`}
                               onCommit={(v) => override(line.materialId, { laborRate: v })} onInvalid={setRateError} />
                           </td>
-                          <td className="num">{inr(line.materialCost)}</td>
-                          <td className="num">{inr(line.laborCost)}</td>
-                          <td className="num">{inr(line.total)}</td>
+                          <td className="num" data-label="Material">{inr(line.materialCost)}</td>
+                          <td className="num" data-label="Labour">{inr(line.laborCost)}</td>
+                          <td className="num" data-label="Total">{inr(line.total)}</td>
                         </tr>
                       )
                     })}
                     <tr className="subtotal">
                       <td colSpan={5}>{g.category} subtotal</td>
-                      <td className="num">{inr(g.materialCost)}</td>
-                      <td className="num">{inr(g.laborCost)}</td>
-                      <td className="num">{inr(g.total)}</td>
+                      <td className="num" data-label="Material">{inr(g.materialCost)}</td>
+                      <td className="num" data-label="Labour">{inr(g.laborCost)}</td>
+                      <td className="num" data-label="Total">{inr(g.total)}</td>
                     </tr>
                   </tbody>
                 ))}
@@ -167,10 +177,6 @@ export default function EstimateStep({ project, design, onNext }: Props) {
               </>
             )}
           </details>
-          <div className="total-bar">
-            <span>Estimated total</span>
-            <span className="amount">{inr(total)}</span>
-          </div>
           <button type="button" className="btn btn-primary" onClick={onNext}>Next: get the report</button>
         </div>
       )}
