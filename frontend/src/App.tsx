@@ -94,7 +94,8 @@ export default function App() {
         {!loading && step === 'estimate' && project && design && <EstimateStep project={project} design={design} onNext={() => go('report')} />}
         {!loading && step === 'report' && project && design && <ReportStep project={project} design={design} />}
         <footer className="footer">
-          Advisory estimate from one photo. Confirm measurements and prices with your contractor before work begins.
+          <p>Advisory estimate from one photo. Confirm measurements and prices with your contractor before work begins.</p>
+          <p>Miesign · designed and built by Mihir Kapildev Tiwari</p>
         </footer>
       </main>
     </div>

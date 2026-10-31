@@ -12,7 +12,7 @@ export default function StepRail({ step, unlocked, onSelect }: Props) {
   return (
     <>
       <nav className="rail" aria-label="Steps">
-        <span className="wordmark">Facade</span>
+        <span className="wordmark">Miesign</span>
         <ol>
           {STEPS.map((s, i) => (
             <li key={s.key}>
@@ -33,7 +33,7 @@ export default function StepRail({ step, unlocked, onSelect }: Props) {
       <div className="mobile-bar">
         <div className="inner">
           <span>
-            Step {index + 1} of {STEPS.length} · <strong>{STEPS[index].label}</strong>
+            <span className="mobile-brand">Miesign</span> · Step {index + 1} of {STEPS.length} · <strong>{STEPS[index].label}</strong>
           </span>
           <label className="sr-only" htmlFor="step-jump">Go to step</label>
           <select id="step-jump" className="step-jump" value={step} onChange={(e) => onSelect(e.target.value as StepKey)}>

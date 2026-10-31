@@ -1,5 +1,7 @@
 {
-  "name": "facade-frontend",
+  "name": "miesign",
+  "description": "Miesign: see your house renovated before you build.",
+  "author": "Mihir Kapildev Tiwari",
   "private": true,
   "version": "0.1.0",
   "type": "module",
