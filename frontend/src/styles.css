@@ -123,6 +123,9 @@ textarea { min-height: 112px; resize: vertical; }
 }
 .dropzone:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .dropzone[data-over="true"] { background: var(--color-accent-wash); border-color: var(--color-accent); }
+.how-it-works { list-style: none; counter-reset: how; margin: var(--space-xs) 0 0; padding: 0; display: grid; gap: var(--space-2xs); }
+.how-it-works li { counter-increment: how; display: flex; gap: var(--space-sm); align-items: baseline; }
+.how-it-works li::before { content: counter(how, decimal-leading-zero); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-ink-2); }
 .thumbs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr)); gap: var(--space-md); }
 .thumb { display: grid; gap: var(--space-xs); padding: var(--space-xs); border: var(--rule-hair); border-radius: var(--radius-sm); }
 .thumb[data-primary="true"] { border-color: var(--color-accent); }

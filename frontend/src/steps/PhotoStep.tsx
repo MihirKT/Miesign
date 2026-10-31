@@ -52,6 +52,7 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
     onChange(await api.updateProject(p.id, { state, city }))
   }
 
+  const primary = project?.photos.find((ph) => ph.id === project.primaryPhotoId)
   const pick = (files: FileList | null) => {
     const file = files?.[0]
     if (file && !busy) void upload(file)
@@ -66,6 +67,16 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
       </header>
       <div className="workspace">
         <div className="stack">
+          {!project?.primaryPhotoId && (
+            <div>
+              <h2>How Miesign works</h2>
+              <ol className="how-it-works">
+                <li>Upload a front photo</li>
+                <li>Choose colours and materials</li>
+                <li>See the redesign and a cost estimate in ₹</li>
+              </ol>
+            </div>
+          )}
           <label
             className="dropzone"
             data-over={over}
@@ -85,6 +96,12 @@ export default function PhotoStep({ project, states, ensureProject, onChange, on
           </label>
           <p className="sr-only" aria-live="polite">{status}</p>
           {error && <p className="notice error" role="alert">{error}</p>}
+          {primary?.qualityOk && primary.tips.length > 0 && (
+            <div className="notice ok">
+              <strong>Accepted. Tips for an even better result:</strong>
+              <ul>{primary.tips.map((t, i) => <li key={`${i}-${t}`}>{t}</li>)}</ul>
+            </div>
+          )}
           {project && project.photos.length > 0 && (
             <ul className="thumbs" aria-label="Your photos">
               {project.photos.map((ph, n) => (
